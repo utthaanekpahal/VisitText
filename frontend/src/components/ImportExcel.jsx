@@ -7,17 +7,47 @@ export default function ImportExcel({
   setSchools,
   subjects,
 }) {
+const scienceSubjects = [
+  "Chemistry",
+  "Physics",
+  "Botany",
+  "Biology",
+];
+
+const mediums = [
+  "English Medium",
+  "Hindi Medium",
+];
+
 const createSubjectData = () => {
   const data = {};
 
   subjects.forEach((subject) => {
-    data[subject] = [
-      {
-        teacherName: "",
-        number: "",
-        qty: "",
-      },
-    ];
+    if (subject === "Science") {
+      data[subject] = {};
+
+      mediums.forEach((medium) => {
+        data[subject][medium] = {};
+
+        scienceSubjects.forEach((scienceSubject) => {
+          data[subject][medium][scienceSubject] = [
+            {
+              teacherName: "",
+              number: "",
+              qty: "",
+            },
+          ];
+        });
+      });
+    } else {
+      data[subject] = [
+        {
+          teacherName: "",
+          number: "",
+          qty: "",
+        },
+      ];
+    }
   });
 
   return data;

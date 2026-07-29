@@ -11,8 +11,48 @@ export default function SchoolTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
 const [qtyRange, setQtyRange] = useState("");
+const [selectedSubject, setSelectedSubject] = useState("All");
   const rowsPerPage = 10;
+  const subjectGroups = {
+  Science: [
+    "Chemistry",
+    "Physics",
+    "Botany",
+    "Mathematics",
+  ],
 
+  Commerce: [
+    "Accounts",
+    "Business Studies",
+    "Economics",
+    "Bookkeeping"
+  ],
+
+  Arts: [
+    "Political Science",
+    "Geography",
+    "History",
+    "Economics",
+    "Sociology"
+  ],
+
+  Agriculture: [
+    "Horticulture",
+    "Animal Husbandry",
+    "Crop Production",
+    
+  ],
+
+  Bharti: [
+    "Hindi",
+    "English",
+    "Sanskrit", 
+  ],
+};
+const mediums = [
+  "English Medium",
+  "Hindi Medium",
+];
   // Search
  // Search + Quantity Filter
 const filteredSchools = schools.filter((school) => {
@@ -78,14 +118,42 @@ const filteredSchools = schools.filter((school) => {
       break;
   }
 
-  const qtyMatch = subjects.some((subject) => {
-    const teachers = school.subjects?.[subject] || [];
+ const qtyMatch = subjects.some((subject) => {
 
-    return teachers.some((teacher) => {
-      const qty = Number(teacher.qty || 0);
-      return qty >= min && qty <= max;
-    });
+  // ======================
+  // Science
+  // ======================
+ if (subjectGroups[subject]) {
+
+  return mediums.some((medium) =>
+    subjectGroups[subject].some((subSubject) => {
+
+      const teachers =
+        school.subjects?.[subject]?.[medium]?.[subSubject] || [];
+
+      return teachers.some((teacher) => {
+        const qty = Number(teacher.qty || 0);
+
+        return qty >= min && qty <= max;
+      });
+
+    })
+  );
+
+}
+  // ======================
+  // Other Subjects
+  // ======================
+
+  const teachers = school.subjects?.[subject] || [];
+
+  return teachers.some((teacher) => {
+    const qty = Number(teacher.qty || 0);
+
+    return qty >= min && qty <= max;
   });
+
+});
 
   return (nameMatch || codeMatch) && qtyMatch;
 });
@@ -161,7 +229,22 @@ const filteredSchools = schools.filter((school) => {
       <option value="91-100">91 - 100</option>
       <option value="101+">101+</option>
     </select>
+     <select
+  value={selectedSubject}
+  onChange={(e) => {
+    setSelectedSubject(e.target.value);
+    setCurrentPage(1);
+  }}
+  className="rounded-lg border border-gray-300 px-4 py-2"
+>
+  <option value="All">All Subjects</option>
 
+  {subjects.map((subject) => (
+    <option key={subject} value={subject}>
+      {subject}
+    </option>
+  ))}
+</select>
   </div>
 
   <span className="text-gray-600 font-medium">
@@ -175,74 +258,135 @@ const filteredSchools = schools.filter((school) => {
 
           {/* ================= HEADER ================= */}
 
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-[#ece5d8]">
+         <thead className="sticky top-0 z-10">
 
-              <th
-                rowSpan={2}
-                className="border border-gray-400 px-5 py-4 font-bold whitespace-nowrap"
-              >
-                S.No.
-              </th>
+  {/* Row 1 */}
+  <tr className="bg-[#ece5d8]">
 
-              <th
-                rowSpan={2}
-                className="border border-gray-400 px-8 py-4 font-bold"
-              >
-                Code
-              </th>
+   <th rowSpan={4}>S.No.</th>
+<th rowSpan={4}>Code</th>
+<th rowSpan={4}>School Name</th>
+<th rowSpan={4}>Grade</th>
 
-              <th
-                rowSpan={2}
-                className="border border-gray-400 min-w-[320px] px-10 py-4 font-bold"
-              >
-                School Name
-              </th>
+    {(selectedSubject === "All"
+  ? subjects
+  : [selectedSubject]
+).map((subject) => {
 
-              <th
-                rowSpan={2}
-                className="border border-gray-400 px-6 py-4 font-bold"
-              >
-                Grade
-              </th>
-{subjects.map((subject) => (
-  <th
-    key={subject}
-    colSpan={3}
-    className="border border-gray-400 py-4 font-bold bg-[#ece5d8]"
-  >
-    <div className="flex items-center justify-center gap-2">
-      <span>{subject}</span>
-
-     <button
-  onClick={() => handleDeleteSubject(subject)}
-  className="text-red-600 hover:text-red-800"
-  title={`Delete ${subject}`}
+ const totalColumns = subjectGroups[subject]
+? subjectGroups[subject].length * mediums.length * 3
+: 3;
+  return (
+    <th
+  key={subject}
+  colSpan={totalColumns}
+  className="border border-gray-400 min-w-[500px]"
 >
-  <FiTrash2 size={16} />
-</button>
-    </div>
-  </th>
-))}
-            </tr>
-            <tr className="bg-[#f7f3eb]">
-              {subjects.map((subject) => (
-                <React.Fragment key={subject}>
-                  <th className="border border-gray-400 px-4 py-3">
-                    Name
-                  </th>
+      {subject}
+    </th>
+  );
 
-                  <th className="border border-gray-400 px-4 py-3">
-                    Number
-                  </th>
+  return (
+    <th
+      key={subject}
+      colSpan={3}
+      rowSpan={4}
+      className="border border-gray-400"
+    >
+      {subject}
+    </th>
+  );
+})}
 
-                  <th className="border border-gray-400 px-4 py-3">
-                    Qty
-                  </th>
-                </React.Fragment>
-              ))}
-            </tr>
-          </thead>
+  </tr>
+
+  {/* Row 2 */}
+  <tr className="bg-[#f7f3eb]">
+{(selectedSubject === "All"
+  ? subjects
+  : [selectedSubject]
+).map((subject) => {
+
+  if (subjectGroups[subject]) {
+    return mediums.map((medium) => (
+      <th
+        key={medium}
+        colSpan={subjectGroups[subject].length * 3}
+        className="border border-gray-400 text-center"
+      >
+        {medium}
+      </th>
+    ));
+  }
+
+  return (
+    <th
+      key={subject + "-dummy"}
+      colSpan={3}
+      rowSpan={3}
+      className="hidden"
+    ></th>
+  );
+})}
+
+</tr>
+<tr className="bg-[#f7f3eb]">
+
+{(selectedSubject === "All"
+  ? subjects
+  : [selectedSubject]
+).map(subject=>{
+
+  if (!subjectGroups[subject]) return null;
+
+return mediums.flatMap((medium) =>
+  subjectGroups[subject].map((sub) => (
+    <th
+      key={medium + sub}
+      colSpan={3}
+      className="border border-gray-400 min-w-[350px]"
+    >
+      {sub}
+    </th>
+  ))
+);
+
+})}
+
+</tr>
+  {/* Row 3 */}
+  <tr>
+
+{(selectedSubject === "All"
+  ? subjects
+  : [selectedSubject]
+).map(subject=>{
+
+if(subjectGroups[subject]){
+
+return mediums.flatMap((medium)=>
+
+subjectGroups[subject].flatMap((sub)=>[
+
+<th key={medium+sub+"1"}>Name</th>,
+
+<th key={medium+sub+"2"}>Number</th>,
+
+<th key={medium+sub+"3"}>Qty</th>,
+
+])
+
+)
+
+}
+
+return null;
+
+})}
+
+</tr>
+
+</thead>
 {/* ================= BODY ================= */}
 
 <tbody>
@@ -251,14 +395,29 @@ const filteredSchools = schools.filter((school) => {
       const originalIndex = schools.indexOf(school);
 
       // Maximum rows among all subjects
-      const maxRows = Math.max(
-        1,
-        ...subjects.map((subject) =>
-          Array.isArray(school.subjects?.[subject])
-            ? school.subjects[subject].length
-            : 0
-        )
-      );
+   const maxRows = Math.max(
+  1,
+  ...subjects.map((subject) => {
+    // Grouped Subjects
+    if (subjectGroups[subject]) {
+      let max = 1;
+
+      mediums.forEach((medium) => {
+        subjectGroups[subject].forEach((subSubject) => {
+          const len =
+            school.subjects?.[subject]?.[medium]?.[subSubject]?.length || 0;
+
+          if (len > max) max = len;
+        });
+      });
+
+      return max;
+    }
+
+    // Normal Subjects
+    return school.subjects?.[subject]?.length || 0;
+  })
+);
 
       return (
         <React.Fragment key={originalIndex}>
@@ -298,30 +457,129 @@ const filteredSchools = schools.filter((school) => {
   </div>
 </td>
 
-                  <td
-                    rowSpan={maxRows}
-                    className="border border-gray-300 p-2 align-top"
-                  >
-                    <input
-                      type="text"
-                      value={school.grade}
-                      onChange={(e) =>
-                        handleInputChange(
-                          originalIndex,
-                          null,
-                          null,
-                          "grade",
-                          e.target.value
-                        )
-                      }
-                      className="w-full bg-transparent text-center outline-none"
-                    />
-                  </td>
+                <td
+  rowSpan={maxRows}
+  className="border min-w-[180px] w-[180px] border-gray-300 p-2 align-top"
+>
+  <select
+    value={school.grade}
+    onChange={(e) =>
+      handleInputChange(
+        originalIndex,
+        null,
+        null,
+        "grade",
+        e.target.value
+      )
+    }
+    className="w-full bg-transparent text-center outline-none border rounded px-2 py-1"
+  >
+    <option value="">Select Class</option>
+    <option value="Class 11">Class 11</option>
+    <option value="Class 12">Class 12</option>
+  </select>
+</td>
                 </>
               )}
 
               {/* Subject Columns */}
-              {subjects.map((subject) => {
+              {(selectedSubject === "All"
+  ? subjects
+  : [selectedSubject]
+).map((subject) => {
+                if (subjectGroups[subject]) {
+  return (
+    <React.Fragment key={subject}>
+      {mediums.flatMap((medium) =>
+       subjectGroups[subject].flatMap((subSubject) => {
+          const teachers =
+            school.subjects?.[subject]?.[medium]?.[subSubject] || [];
+
+          const teacher = teachers[teacherRow];
+
+          const hasRow = teacher !== undefined;
+
+          return [
+            // Name
+            <td
+              key={`${medium}-${subSubject}-name`}
+              className="border border-gray-300 p-2"
+            >
+              {hasRow && (
+                <input
+                  type="text"
+                  value={teacher.teacherName}
+                  onChange={(e) =>
+                    handleInputChange(
+                      originalIndex,
+                        subject,
+                      teacherRow,
+                      "teacherName",
+                      e.target.value,
+                      medium, 
+                      subSubject
+                    )
+                  }
+                  className="w-full bg-transparent text-center outline-none"
+                />
+              )}
+            </td>,
+
+            // Number
+            <td
+              key={`${medium}-${subSubject}-number`}
+              className="border border-gray-300 p-2"
+            >
+              {hasRow && (
+                <input
+                  type="text"
+                  value={teacher.number}
+                  onChange={(e) =>
+                    handleInputChange(
+                      originalIndex,
+                      subject,
+                      teacherRow,
+                      "number",
+                      e.target.value,
+                      medium,
+                      subSubject
+                    )
+                  }
+                  className="w-full bg-transparent text-center outline-none"
+                />
+              )}
+            </td>,
+
+            // Qty
+            <td
+              key={`${medium}-${subSubject}-qty`}
+              className="border border-gray-300 p-2"
+            >
+              {hasRow && (
+                <input
+                  type="number"
+                  value={teacher.qty}
+                  onChange={(e) =>
+                    handleInputChange(
+                      originalIndex,
+                        subject,
+                      teacherRow,
+                      "qty",
+                      e.target.value,
+                      medium,
+                      subSubject
+                    )
+                  }
+                  className="w-full bg-transparent text-center outline-none"
+                />
+              )}
+            </td>,
+          ];
+        })
+      )}
+    </React.Fragment>
+  );
+}
                 const teachers = Array.isArray(
                   school.subjects?.[subject]
                 )
@@ -404,7 +662,18 @@ const hasRow = teacher !== undefined;
   ) : (
     <tr>
       <td
-        colSpan={4 + subjects.length * 3}
+       colSpan={
+  4 +
+  subjects.reduce((total, subject) => {
+
+    if (subjectGroups[subject]) {
+      return total + subjectGroups[subject].length * mediums.length * 3;
+    }
+
+    return total + 3;
+
+  }, 0)
+}
         className="p-10 text-center text-gray-500"
       >
         No School Found

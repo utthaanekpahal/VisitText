@@ -14,7 +14,6 @@ import ImportExcel from "../components/ImportExcel";
 export default function SchoolRecords() {
 const [selectedSchool, setSelectedSchool] = useState(null);
 const [selectedSubject, setSelectedSubject] = useState("");
-
   const [schools, setSchools] = useState([]);
 
 const [subjects, setSubjects] = useState([
@@ -24,17 +23,44 @@ const [subjects, setSubjects] = useState([
   "Agriculture",
   "Bharti"
 ]);
+
 const createSubjectData = () => {
   const data = {};
 
+  const subjectGroups = {
+    Science: ["Chemistry", "Physics", "Botany", "Biology"],
+    Commerce: ["Commerce", "Accounts", "BSt", "Economics"],
+    Arts: ["Arts", "Geography", "History", "Civis"],
+    Agriculture: [
+      "Agriculture1",
+      "Agriculture2",
+      "Agriculture3",
+      "Agriculture4",
+    ],
+    Bharti: [
+      "Bharti1",
+      "Bharti2",
+      "Bharti3",
+      "Bharti4",
+    ],
+  };
+
+  const mediums = ["English Medium", "Hindi Medium"];
+
   subjects.forEach((subject) => {
-    data[subject] = [
-      {
-        teacherName: "",
-        number: "",
-        qty: "",
-      },
-    ];
+    if (subjectGroups[subject]) {
+      data[subject] = {};
+
+      mediums.forEach((medium) => {
+        data[subject][medium] = {};
+
+        subjectGroups[subject].forEach((sub) => {
+          data[subject][medium][sub] = [];
+        });
+      });
+    } else {
+      data[subject] = [];
+    }
   });
 
   return data;
@@ -44,169 +70,296 @@ const handleInputChange = (
   subject,
   rowIndex,
   field,
-  value
+  value,
+  medium,
+  subSubject
 ) => {
   setSchools((prev) => {
     const updated = [...prev];
 
+    // Grade
     if (field === "grade") {
       updated[schoolIndex].grade = value;
-    } else {
-      if (!updated[schoolIndex].subjects[subject][rowIndex]) {
-        updated[schoolIndex].subjects[subject][rowIndex] = {
+      return updated;
+    }
+
+    // Grouped Subjects
+    if (medium && subSubject) {
+      if (!updated[schoolIndex].subjects[subject]) {
+        updated[schoolIndex].subjects[subject] = {};
+      }
+
+      if (!updated[schoolIndex].subjects[subject][medium]) {
+        updated[schoolIndex].subjects[subject][medium] = {};
+      }
+
+      if (!updated[schoolIndex].subjects[subject][medium][subSubject]) {
+        updated[schoolIndex].subjects[subject][medium][subSubject] = [];
+      }
+
+      if (
+        !updated[schoolIndex].subjects[subject][medium][subSubject][rowIndex]
+      ) {
+        updated[schoolIndex].subjects[subject][medium][subSubject][rowIndex] = {
           teacherName: "",
           number: "",
           qty: "",
         };
       }
 
-      updated[schoolIndex].subjects[subject][rowIndex][field] = value;
+      updated[schoolIndex].subjects[subject][medium][subSubject][rowIndex][field] =
+        value;
+
+      return [...updated];
     }
 
-    return updated;
+    // Normal Subjects
+    if (!updated[schoolIndex].subjects[subject]) {
+      updated[schoolIndex].subjects[subject] = [];
+    }
+
+    if (!updated[schoolIndex].subjects[subject][rowIndex]) {
+      updated[schoolIndex].subjects[subject][rowIndex] = {
+        teacherName: "",
+        number: "",
+        qty: "",
+      };
+    }
+
+    updated[schoolIndex].subjects[subject][rowIndex][field] = value;
+
+    return [...updated];
   });
 };
 console.log("SchoolRecords Data:", schools);
-
-const handleExport = () => {
-
-  // STEP 1
+const handleExport = (type = "all") => {
   const data = [];
 
-  const header1 = [
-    "Code",
-    "School Name",
-    "Grade",
-  ];
+  const subjectGroups = {
+    Science: ["Chemistry", "Physics", "Botany", "Biology"],
+    Commerce: ["Commerce", "Accounts", "BSt", "Economics"],
+    Arts: ["Arts", "Geography", "History", "Civis"],
+    Agriculture: [
+      "Agriculture1",
+      "Agriculture2",
+      "Agriculture3",
+      "Agriculture4",
+    ],
+    Bharti: [
+      "Bharti1",
+      "Bharti2",
+      "Bharti3",
+      "Bharti4",
+    ],
+  };
+
+  const mediums = ["English Medium", "Hindi Medium"];
+
+  // ---------------- HEADER ----------------
+
+  const header1 = ["Code", "School Name", "Grade"];
+  const header2 = ["", "", ""];
+  const header3 = ["", "", ""];
+  const header4 = ["", "", ""];
 
   subjects.forEach((subject) => {
-    header1.push(subject);
-    header1.push("");
-    header1.push("");
+    if (subjectGroups[subject]) {
+      header1.push(subject);
+      for (let i = 1; i < subjectGroups[subject].length * mediums.length * 3; i++) {
+        header1.push("");
+      }
+
+      mediums.forEach((medium) => {
+        header2.push(medium);
+        for (let i = 1; i < subjectGroups[subject].length * 3; i++) {
+          header2.push("");
+        }
+
+        subjectGroups[subject].forEach((sub) => {
+          header3.push(sub, "", "");
+          header4.push("Teacher", "Number", "Qty");
+        });
+      });
+    } else {
+      header1.push(subject, "", "");
+      header2.push("", "", "");
+      header3.push("", "", "");
+      header4.push("Teacher", "Number", "Qty");
+    }
   });
 
   data.push(header1);
-
-  const header2 = [
-    "",
-    "",
-    "",
-  ];
-
-  subjects.forEach(() => {
-    header2.push("Name");
-    header2.push("Number");
-    header2.push("Qty");
-  });
-
   data.push(header2);
+  data.push(header3);
+  data.push(header4);
+ const hasData = (school) => {
+  return subjects.some((subject) => {
+    const subjectData = school.subjects?.[subject];
 
-  // ==========================
-  // STEP 2
-  // ==========================
-schools.forEach((school) => {
+    if (!subjectData) return false;
 
-  const maxRows = Math.max(
-    1,
-    ...subjects.map(subject =>
-      school.subjects?.[subject]?.length || 0
-    )
-  );
-
-  for (let i = 0; i < maxRows; i++) {
-
-    const row = [];
-
-    if (i === 0) {
-      row.push(
-        school.code,
-        school.schoolName,
-        school.grade
+    // Normal Subject
+    if (Array.isArray(subjectData)) {
+      return subjectData.some(
+        (row) =>
+          row.teacherName?.trim() ||
+          row.number?.trim() ||
+          row.qty
       );
-    } else {
-      row.push("", "", "");
     }
 
-    subjects.forEach(subject => {
+    // Group Subject
+    return Object.keys(subjectData).some((medium) => {
+      const mediumData = subjectData[medium];
 
-      const teacher =
-        school.subjects?.[subject]?.[i];
+      return Object.keys(mediumData).some((subSubject) => {
+        const rows = mediumData[subSubject];
 
-      row.push(teacher?.teacherName || "");
-      row.push(teacher?.number || "");
-      row.push(teacher?.qty || "");
+        if (!Array.isArray(rows)) return false;
 
+        return rows.some(
+          (row) =>
+            row.teacherName?.trim() ||
+            row.number?.trim() ||
+            row.qty
+        );
+      });
+    });
+  });
+};
+  // ---------------- DATA ----------------
+
+  schools.forEach((school) => {
+    const filled = hasData(school);
+
+if (type === "filled" && !filled) return;
+
+if (type === "empty" && filled) return;
+    let maxRows = 1;
+
+    subjects.forEach((subject) => {
+      if (subjectGroups[subject]) {
+        mediums.forEach((medium) => {
+          subjectGroups[subject].forEach((sub) => {
+            const len =
+              school.subjects?.[subject]?.[medium]?.[sub]?.length || 0;
+
+            if (len > maxRows) maxRows = len;
+          });
+        });
+      } else {
+        const len = school.subjects?.[subject]?.length || 0;
+        if (len > maxRows) maxRows = len;
+      }
     });
 
-    data.push(row);
+    for (let r = 0; r < maxRows; r++) {
+      const row = [];
 
-  }
+      if (r === 0) {
+        row.push(school.code, school.schoolName, school.grade);
+      } else {
+        row.push("", "", "");
+      }
 
-});
-const worksheet2 = XLSX.utils.aoa_to_sheet(data);
-  // ==========================
-  // STEP 3
-  // (YAHAN ADD KARNA HAI)
-  // ==========================
+      subjects.forEach((subject) => {
+        if (subjectGroups[subject]) {
+          mediums.forEach((medium) => {
+            subjectGroups[subject].forEach((sub) => {
+              const teacher =
+                school.subjects?.[subject]?.[medium]?.[sub]?.[r];
 
-  worksheet2["!merges"] = [
-    {
-      s: { r: 0, c: 0 },
-      e: { r: 1, c: 0 },
-    },
-    {
-      s: { r: 0, c: 1 },
-      e: { r: 1, c: 1 },
-    },
-    {
-      s: { r: 0, c: 2 },
-      e: { r: 1, c: 2 },
-    },
+              row.push(
+                teacher?.teacherName || "",
+                teacher?.number || "",
+                teacher?.qty || ""
+              );
+            });
+          });
+        } else {
+          const teacher = school.subjects?.[subject]?.[r];
+
+          row.push(
+            teacher?.teacherName || "",
+            teacher?.number || "",
+            teacher?.qty || ""
+          );
+        }
+      });
+
+      data.push(row);
+    }
+  });
+
+  // ---------------- SHEET ----------------
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+
+  ws["!cols"] = data[0].map(() => ({
+    wch: 18,
+  }));
+
+  ws["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 3, c: 0 } },
+    { s: { r: 0, c: 1 }, e: { r: 3, c: 1 } },
+    { s: { r: 0, c: 2 }, e: { r: 3, c: 2 } },
   ];
 
   let col = 3;
 
-  subjects.forEach(() => {
-    worksheet2["!merges"].push({
-      s: { r: 0, c: col },
-      e: { r: 0, c: col + 2 },
-    });
+  subjects.forEach((subject) => {
+    if (subjectGroups[subject]) {
+      const subjectCols =
+        subjectGroups[subject].length * mediums.length * 3;
 
-    col += 3;
+      ws["!merges"].push({
+        s: { r: 0, c: col },
+        e: { r: 0, c: col + subjectCols - 1 },
+      });
+
+      mediums.forEach((medium) => {
+        const mediumStart = col;
+
+        ws["!merges"].push({
+          s: { r: 1, c: mediumStart },
+          e: {
+            r: 1,
+            c: mediumStart + subjectGroups[subject].length * 3 - 1,
+          },
+        });
+
+        let c = mediumStart;
+
+        subjectGroups[subject].forEach(() => {
+          ws["!merges"].push({
+            s: { r: 2, c },
+            e: { r: 2, c: c + 2 },
+          });
+
+          c += 3;
+        });
+
+        col += subjectGroups[subject].length * 3;
+      });
+    } else {
+      ws["!merges"].push({
+        s: { r: 0, c: col },
+        e: { r: 2, c: col + 2 },
+      });
+
+      col += 3;
+    }
   });
 
-  // ==========================
-  // STEP 4
-  // (STEP 3 KE JUST NICHE)
-  // ==========================
+  const wb = XLSX.utils.book_new();
 
-  worksheet2["!cols"] = [
-    { wch: 15 },
-    { wch: 40 },
-    { wch: 12 },
-
-    ...subjects.flatMap(() => [
-      { wch: 25 },
-      { wch: 18 },
-      { wch: 10 },
-    ]),
-  ];
-
-  // ==========================
-  // STEP 5
-  // ==========================
-
-  const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet2,
+    wb,
+    ws,
     "School Records"
   );
-XLSX.writeFile(
-  workbook,
-  "School_Records.xlsx"
-);
-  // Part 2 me yahan data rows aur writeFile aayega.
+
+  XLSX.writeFile(wb, "School_Records.xlsx");
 };
 const handleDeleteSchool = (schoolIndex) => {
   if (schoolIndex < 0) return;
@@ -255,23 +408,73 @@ const addTeacherRow = () => {
     return;
   }
 
+  const subjectGroups = {
+    Science: ["Chemistry", "Physics", "Botany", "Biology"],
+    Commerce: ["Commerce", "Accounts", "BSt", "Economics"],
+    Arts: ["Arts", "Geography", "History", "Civis"],
+    Agriculture: [
+      "Agriculture1",
+      "Agriculture2",
+      "Agriculture3",
+      "Agriculture4",
+    ],
+    Bharti: [
+      "Bharti1",
+      "Bharti2",
+      "Bharti3",
+      "Bharti4",
+    ],
+  };
+
+  const mediums = ["English Medium", "Hindi Medium"];
+
   setSchools((prev) =>
     prev.map((school, index) => {
       if (index !== selectedSchool) return school;
 
-      return {
-        ...school,
-        subjects: {
-          ...school.subjects,
-          [selectedSubject]: [
-            ...(school.subjects[selectedSubject] || []),
-            {
+      const updatedSubjects = { ...school.subjects };
+
+      // Group Subject
+      if (subjectGroups[selectedSubject]) {
+        if (!updatedSubjects[selectedSubject]) {
+          updatedSubjects[selectedSubject] = {};
+        }
+
+        mediums.forEach((medium) => {
+          if (!updatedSubjects[selectedSubject][medium]) {
+            updatedSubjects[selectedSubject][medium] = {};
+          }
+
+          subjectGroups[selectedSubject].forEach((subSubject) => {
+            if (
+              !updatedSubjects[selectedSubject][medium][subSubject]
+            ) {
+              updatedSubjects[selectedSubject][medium][subSubject] = [];
+            }
+
+            updatedSubjects[selectedSubject][medium][subSubject].push({
               teacherName: "",
               number: "",
               qty: "",
-            },
-          ],
-        },
+            });
+          });
+        });
+      } else {
+        // Normal Subject
+        if (!updatedSubjects[selectedSubject]) {
+          updatedSubjects[selectedSubject] = [];
+        }
+
+        updatedSubjects[selectedSubject].push({
+          teacherName: "",
+          number: "",
+          qty: "",
+        });
+      }
+
+      return {
+        ...school,
+        subjects: updatedSubjects,
       };
     })
   );
@@ -418,47 +621,18 @@ setSchools((prevSchools) =>
   Add Subject
 </button>
 
-
-
-
-
-
-            <button 
-            onClick={handleExport}
-            className="
-            group 
-            flex 
-            items-center 
-            gap-2 
-            rounded-2xl 
-            bg-cyan-500 
-            px-6 
-            py-3 
-            font-semibold 
-            text-white 
-            shadow-lg 
-            transition-all 
-            duration-300 
-            hover:-translate-y-1 
-            hover:bg-cyan-600
-            "
-            >
-
-
-              <FiDownload />
-
-              Export Excel
-
-
-            </button>
-
-
-
-
-
-
-
-
+            <button
+onClick={() => handleExport("filled")}
+className="bg-green-600 text-white px-5 py-3 rounded-xl"
+>
+Export Filled
+</button>
+<button
+onClick={() => handleExport("empty")}
+className="bg-yellow-500 text-white px-5 py-3 rounded-xl"
+>
+Export Empty
+</button>
    <button
   className="
     group
