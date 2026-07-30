@@ -12,7 +12,7 @@ export default function SchoolTable({
   const [search, setSearch] = useState("");
 const [qtyRange, setQtyRange] = useState("");
 const [selectedSubject, setSelectedSubject] = useState("All");
-  const rowsPerPage = 10;
+  const rowsPerPage = 5;
   const subjectGroups = {
   Science: [
     "Chemistry",
