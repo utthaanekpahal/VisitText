@@ -82,7 +82,14 @@ const handleInputChange = (
       updated[schoolIndex].grade = value;
       return updated;
     }
+    if (field === "remark") {
+  if (!updated[schoolIndex].subjects[subject]) {
+    updated[schoolIndex].subjects[subject] = {};
+  }
 
+  updated[schoolIndex].subjects[subject].remark = value;
+  return updated;
+}
     // Grouped Subjects
     if (medium && subSubject) {
       if (!updated[schoolIndex].subjects[subject]) {
@@ -165,7 +172,7 @@ const handleExport = (type = "all") => {
   subjects.forEach((subject) => {
     if (subjectGroups[subject]) {
       header1.push(subject);
-      for (let i = 1; i < subjectGroups[subject].length * mediums.length * 3; i++) {
+      for (let i = 1; i < subjectGroups[subject].length * mediums.length * 3 +1; i++) {
         header1.push("");
       }
 
@@ -180,6 +187,10 @@ const handleExport = (type = "all") => {
           header4.push("Teacher", "Number", "Qty");
         });
       });
+      // Remark Column
+header2.push("Remark");
+header3.push("");
+header4.push("");
     } else {
       header1.push(subject, "", "");
       header2.push("", "", "");
@@ -276,6 +287,14 @@ if (type === "empty" && filled) return;
               );
             });
           });
+          // Remark
+if (r === 0) {
+  row.push(
+    school.subjects?.[subject]?.remark || ""
+  );
+} else {
+  row.push("");
+}
         } else {
           const teacher = school.subjects?.[subject]?.[r];
 
@@ -310,7 +329,10 @@ if (type === "empty" && filled) return;
   subjects.forEach((subject) => {
     if (subjectGroups[subject]) {
       const subjectCols =
-        subjectGroups[subject].length * mediums.length * 3;
+  subjectGroups[subject].length *
+  mediums.length *
+  3 +
+  1; // +1 for Remark
 
       ws["!merges"].push({
         s: { r: 0, c: col },
@@ -341,6 +363,13 @@ if (type === "empty" && filled) return;
 
         col += subjectGroups[subject].length * 3;
       });
+      // Merge Remark
+ws["!merges"].push({
+  s: { r: 1, c: col },
+  e: { r: 3, c: col },
+});
+
+col += 1;
     } else {
       ws["!merges"].push({
         s: { r: 0, c: col },
@@ -608,7 +637,7 @@ setSchools((prevSchools) =>
       ...school.subjects,
       [subject]: [
   {
-    teacherName: "",
+    Name: "",
     number: "",
     qty: "",
   },

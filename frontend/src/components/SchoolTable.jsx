@@ -274,8 +274,8 @@ const filteredSchools = schools.filter((school) => {
 ).map((subject) => {
 
  const totalColumns = subjectGroups[subject]
-? subjectGroups[subject].length * mediums.length * 3
-: 3;
+  ? subjectGroups[subject].length * mediums.length * 3 + 1
+  : 4;
   return (
     <th
   key={subject}
@@ -308,7 +308,9 @@ const filteredSchools = schools.filter((school) => {
 ).map((subject) => {
 
   if (subjectGroups[subject]) {
-    return mediums.map((medium) => (
+    return (
+  <React.Fragment key={subject}>
+    {mediums.map((medium) => (
       <th
         key={medium}
         colSpan={subjectGroups[subject].length * 3}
@@ -316,7 +318,16 @@ const filteredSchools = schools.filter((school) => {
       >
         {medium}
       </th>
-    ));
+    ))}
+
+    <th
+      rowSpan={3}
+      className="border border-gray-400 min-w-[180px]"
+    >
+      Remark
+    </th>
+  </React.Fragment>
+);
   }
 
   return (
@@ -364,19 +375,27 @@ return mediums.flatMap((medium) =>
 
 if(subjectGroups[subject]){
 
-return mediums.flatMap((medium)=>
+return mediums.flatMap((medium) => {
+  const headers = subjectGroups[subject].flatMap((sub) => [
+    <th key={medium + sub + "1"}>Name</th>,
+    <th key={medium + sub + "2"}>Number</th>,
+    <th key={medium + sub + "3"}>Qty</th>,
+  ]);
 
-subjectGroups[subject].flatMap((sub)=>[
+  if (medium === "Hindi Medium") {
+    headers.push(
+      <th
+        key={subject + "-remark"}
+        rowSpan={2}
+        className="border border-gray-400 min-w-[220px]"
+      >
+        Remark
+      </th>
+    );
+  }
 
-<th key={medium+sub+"1"}>Name</th>,
-
-<th key={medium+sub+"2"}>Number</th>,
-
-<th key={medium+sub+"3"}>Qty</th>,
-
-])
-
-)
+  return headers;
+});
 
 }
 
@@ -490,94 +509,110 @@ return null;
                 if (subjectGroups[subject]) {
   return (
     <React.Fragment key={subject}>
-      {mediums.flatMap((medium) =>
-       subjectGroups[subject].flatMap((subSubject) => {
-          const teachers =
-            school.subjects?.[subject]?.[medium]?.[subSubject] || [];
+  {mediums.flatMap((medium) =>
+    subjectGroups[subject].flatMap((subSubject) => {
+      const teachers =
+        school.subjects?.[subject]?.[medium]?.[subSubject] || [];
 
-          const teacher = teachers[teacherRow];
+      const teacher = teachers[teacherRow];
+      const hasRow = teacher !== undefined;
 
-          const hasRow = teacher !== undefined;
+      return [
+        <td
+          key={`${medium}-${subSubject}-name`}
+          className="border border-gray-300 p-2"
+        >
+          {hasRow && (
+            <input
+              type="text"
+              value={teacher.teacherName}
+              onChange={(e) =>
+                handleInputChange(
+                  originalIndex,
+                  subject,
+                  teacherRow,
+                  "teacherName",
+                  e.target.value,
+                  medium,
+                  subSubject
+                )
+              }
+              className="w-full bg-transparent text-center outline-none"
+            />
+          )}
+        </td>,
 
-          return [
-            // Name
-            <td
-              key={`${medium}-${subSubject}-name`}
-              className="border border-gray-300 p-2"
-            >
-              {hasRow && (
-                <input
-                  type="text"
-                  value={teacher.teacherName}
-                  onChange={(e) =>
-                    handleInputChange(
-                      originalIndex,
-                        subject,
-                      teacherRow,
-                      "teacherName",
-                      e.target.value,
-                      medium, 
-                      subSubject
-                    )
-                  }
-                  className="w-full bg-transparent text-center outline-none"
-                />
-              )}
-            </td>,
+        <td
+          key={`${medium}-${subSubject}-number`}
+          className="border border-gray-300 p-2"
+        >
+          {hasRow && (
+            <input
+              type="text"
+              value={teacher.number}
+              onChange={(e) =>
+                handleInputChange(
+                  originalIndex,
+                  subject,
+                  teacherRow,
+                  "number",
+                  e.target.value,
+                  medium,
+                  subSubject
+                )
+              }
+              className="w-full bg-transparent text-center outline-none"
+            />
+          )}
+        </td>,
 
-            // Number
-            <td
-              key={`${medium}-${subSubject}-number`}
-              className="border border-gray-300 p-2"
-            >
-              {hasRow && (
-                <input
-                  type="text"
-                  value={teacher.number}
-                  onChange={(e) =>
-                    handleInputChange(
-                      originalIndex,
-                      subject,
-                      teacherRow,
-                      "number",
-                      e.target.value,
-                      medium,
-                      subSubject
-                    )
-                  }
-                  className="w-full bg-transparent text-center outline-none"
-                />
-              )}
-            </td>,
+        <td
+          key={`${medium}-${subSubject}-qty`}
+          className="border border-gray-300 p-2"
+        >
+          {hasRow && (
+            <input
+              type="number"
+              value={teacher.qty}
+              onChange={(e) =>
+                handleInputChange(
+                  originalIndex,
+                  subject,
+                  teacherRow,
+                  "qty",
+                  e.target.value,
+                  medium,
+                  subSubject
+                )
+              }
+              className="w-full bg-transparent text-center outline-none"
+            />
+          )}
+        </td>,
+      ];
+    })
+  )}
 
-            // Qty
-            <td
-              key={`${medium}-${subSubject}-qty`}
-              className="border border-gray-300 p-2"
-            >
-              {hasRow && (
-                <input
-                  type="number"
-                  value={teacher.qty}
-                  onChange={(e) =>
-                    handleInputChange(
-                      originalIndex,
-                        subject,
-                      teacherRow,
-                      "qty",
-                      e.target.value,
-                      medium,
-                      subSubject
-                    )
-                  }
-                  className="w-full bg-transparent text-center outline-none"
-                />
-              )}
-            </td>,
-          ];
-        })
-      )}
-    </React.Fragment>
+  {/* Remark Column */}
+  <td className="border border-gray-300 p-2">
+    {teacherRow === 0 && (
+      <input
+        type="text"
+        value={school.subjects?.[subject]?.remark || ""}
+        onChange={(e) =>
+          handleInputChange(
+            originalIndex,
+            subject,
+            null,
+            "remark",
+            e.target.value
+          )
+        }
+        className="w-full bg-transparent outline-none"
+      />
+    )}
+  </td>
+</React.Fragment>
   );
 }
                 const teachers = Array.isArray(
