@@ -381,19 +381,6 @@ return mediums.flatMap((medium) => {
     <th key={medium + sub + "2"}>Number</th>,
     <th key={medium + sub + "3"}>Qty</th>,
   ]);
-
-  if (medium === "Hindi Medium") {
-    headers.push(
-      <th
-        key={subject + "-remark"}
-        rowSpan={2}
-        className="border border-gray-400 min-w-[220px]"
-      >
-        Remark
-      </th>
-    );
-  }
-
   return headers;
 });
 
@@ -702,7 +689,7 @@ const hasRow = teacher !== undefined;
   subjects.reduce((total, subject) => {
 
     if (subjectGroups[subject]) {
-      return total + subjectGroups[subject].length * mediums.length * 3;
+      return total + subjectGroups[subject].length * mediums.length * 3+1;
     }
 
     return total + 3;
