@@ -1,58 +1,88 @@
 import React, { useEffect, useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
 export default function SchoolTable({
-  schools = [],
-  subjects = [],
+  schools,
+  setSchools,
+  subjects,
+  subjectGroups,
+  mediums,
+  years,
   selectedSchool,
+
+  deletedMediums,
+  deletedSubSubjects,
+
   handleInputChange,
-  handleDeleteSchool = () => {},
-  handleDeleteSubject = () => {},
+  handleDeleteSchool,
+  handleDeleteSubject,
+  handleDeleteMedium,
+  handleDeleteSubSubject,
 }) {
+  const [editingSub, setEditingSub] = useState(null);
+const [editValue, setEditValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
 const [qtyRange, setQtyRange] = useState("");
 const [selectedSubject, setSelectedSubject] = useState("All");
-  const rowsPerPage = 5;
-  const subjectGroups = {
-  Science: [
-    "Chemistry",
-    "Physics",
-    "Botany",
-    "Mathematics",
-  ],
+const [selectedYears, setSelectedYears] = useState(
+  years.length > 0 ? [years[0]] : []
+);
 
-  Commerce: [
-    "Accounts",
-    "Business Studies",
-    "Economics",
-    "Bookkeeping"
-  ],
+useEffect(() => {
+  if (years.length > 0) {
+    setSelectedYears([years[0]]);
+  } else {
+    setSelectedYears([]);
+  }
+}, [years]);
 
-  Arts: [
-    "Political Science",
-    "Geography",
-    "History",
-    "Economics",
-    "Sociology"
-  ],
+const handleYearChange = (year) => {
+  setSelectedYears((prev) => {
+    // Agar already selected hai → remove
+    if (prev.includes(year)) {
+      // At least 1 year selected rahe
+      if (prev.length === 1) {
+        return prev;
+      }
 
-  Agriculture: [
-    "Horticulture",
-    "Animal Husbandry",
-    "Crop Production",
-    
-  ],
+      return prev.filter((y) => y !== year);
+    }
 
-  Bharti: [
-    "Hindi",
-    "English",
-    "Sanskrit", 
-  ],
+    // Agar selected nahi hai → add
+    return [...prev, year].sort(
+      (a, b) => Number(a) - Number(b)
+    );
+  });
+
+  setCurrentPage(1);
 };
-const mediums = [
-  "English Medium",
-  "Hindi Medium",
-];
+
+const visibleYears = years.filter((year) =>
+  selectedYears.includes(year)
+);
+const getVisibleMediums = (subject) => {
+  const deleted = deletedMediums?.[subject] || [];
+
+  return mediums.filter(
+    (medium) => !deleted.includes(medium)
+  );
+};
+
+const getVisibleSubSubjects = (subject, medium) => {
+  const key = `${subject}__${medium}`;
+
+  const deleted = deletedSubSubjects?.[key] || [];
+
+  return (subjectGroups[subject] || []).filter(
+    (sub) => !deleted.includes(sub)
+  );
+};
+  const rowsPerPage = 5;
+
+
+
+
+ 
   // Search
  // Search + Quantity Filter
 const filteredSchools = schools.filter((school) => {
@@ -118,42 +148,47 @@ const filteredSchools = schools.filter((school) => {
       break;
   }
 
- const qtyMatch = subjects.some((subject) => {
 
-  // ======================
-  // Science
-  // ======================
- if (subjectGroups[subject]) {
+  const qtyMatch = ["Class 11", "Class 12"].some((className) =>
+  visibleYears.some((year) =>
 
-  return mediums.some((medium) =>
-    subjectGroups[subject].some((subSubject) => {
 
+    subjects.some((subject) => {
+
+      // Science / Commerce / Arts / Agriculture
+      if (subjectGroups[subject]) {
+
+        return mediums.some((medium) =>
+          subjectGroups[subject].some((subSubject) => {
+
+            const teachers =
+              school.classes?.[className]?.[year]?.subjects?.[subject]?.[medium]?.[subSubject] || [];
+
+            return teachers.some((teacher) => {
+              const qty = Number(teacher.qty || 0);
+              return qty >= min && qty <= max;
+            });
+
+          })
+        );
+
+      }
+
+ 
+
+      // Normal Subject
       const teachers =
-        school.subjects?.[subject]?.[medium]?.[subSubject] || [];
+        school.classes?.[className]?.[year]?.subjects?.[subject] || [];
 
       return teachers.some((teacher) => {
         const qty = Number(teacher.qty || 0);
-
         return qty >= min && qty <= max;
       });
 
     })
-  );
 
-}
-  // ======================
-  // Other Subjects
-  // ======================
-
-  const teachers = school.subjects?.[subject] || [];
-
-  return teachers.some((teacher) => {
-    const qty = Number(teacher.qty || 0);
-
-    return qty >= min && qty <= max;
-  });
-
-});
+  )
+);
 
   return (nameMatch || codeMatch) && qtyMatch;
 });
@@ -195,17 +230,16 @@ const filteredSchools = schools.filter((school) => {
      <div className="p-5 border-b bg-gray-50 flex justify-between items-center">
 
   <div className="flex gap-3">
-
-    <input
-      type="text"
-      placeholder="Search School Name/Code"
-      value={search}
-      onChange={(e) => {
-        setSearch(e.target.value);
-        setCurrentPage(1);
-      }}
-      className="w-96 rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-[#32308D] focus:ring-2 focus:ring-[#32308D]/20"
-    />
+<input
+  type="text"
+  placeholder="Search School Name/Code"
+  value={search}
+  onChange={(e)=>{
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  }}
+  className="w-96 rounded-lg border border-gray-300 px-4 py-2"
+/>
     
 
     <select
@@ -245,6 +279,152 @@ const filteredSchools = schools.filter((school) => {
     </option>
   ))}
 </select>
+<div className="relative">
+  <details className="relative">
+
+    {/* ================= SELECTED YEARS ================= */}
+    <summary
+      className="
+        list-none
+        cursor-pointer
+        rounded-lg
+        border border-gray-300
+        bg-white
+        px-4 py-2
+        min-w-[180px]
+        max-w-[250px]
+        flex
+        items-center
+        justify-between
+        gap-3
+        select-none
+      "
+    >
+      <span className="truncate">
+
+        {selectedYears.length === 0
+          ? "Select Year"
+          : selectedYears.length === years.length
+          ? "All Years"
+          : selectedYears.join(" + ")}
+
+      </span>
+
+      <span className="text-gray-500 shrink-0">
+        ▼
+      </span>
+    </summary>
+
+
+    {/* ================= DROPDOWN ================= */}
+    <div
+      className="
+        absolute
+        z-50
+        mt-1
+        w-full
+        min-w-[180px]
+        rounded-lg
+        border border-gray-300
+        bg-white
+        shadow-lg
+        p-2
+      "
+    >
+
+      {/* ================= ALL ================= */}
+      <label
+        className="
+          flex
+          items-center
+          gap-2
+          px-3
+          py-2
+          rounded
+          cursor-pointer
+          hover:bg-gray-100
+          font-medium
+        "
+      >
+
+        <input
+          type="checkbox"
+          checked={
+            years.length > 0 &&
+            selectedYears.length === years.length
+          }
+          onChange={() => {
+
+            if (selectedYears.length === years.length) {
+
+              // All ko uncheck karne par first year selected rahe
+              setSelectedYears(
+                years.length > 0 ? [years[0]] : []
+              );
+
+            } else {
+
+              // All years select
+              setSelectedYears([...years]);
+
+            }
+
+            setCurrentPage(1);
+          }}
+          className="h-4 w-4"
+        />
+
+        <span>All</span>
+
+      </label>
+
+
+      {/* ================= DIVIDER ================= */}
+      <div className="border-t border-gray-200 my-1" />
+
+
+      {/* ================= YEARS ================= */}
+      {years.map((year) => (
+
+        <label
+          key={year}
+          className="
+            flex
+            items-center
+            gap-2
+            px-3
+            py-2
+            rounded
+            cursor-pointer
+            hover:bg-blue-50
+          "
+        >
+
+          <input
+            type="checkbox"
+            checked={selectedYears.includes(year)}
+            onChange={() => handleYearChange(year)}
+            className="h-4 w-4"
+          />
+
+          <span
+            className={
+              selectedYears.includes(year)
+                ? "text-blue-700 font-semibold"
+                : "text-gray-700"
+            }
+          >
+            {year}
+          </span>
+
+        </label>
+
+      ))}
+
+    </div>
+
+  </details>
+</div>
   </div>
 
   <span className="text-gray-600 font-medium">
@@ -265,25 +445,60 @@ const filteredSchools = schools.filter((school) => {
 
    <th rowSpan={4}>S.No.</th>
 <th rowSpan={4}>Code</th>
-<th rowSpan={4}>School Name</th>
-<th rowSpan={4}>Grade</th>
+<th 
+rowSpan={4}
+className="min-w-[250px]"
+>
+School Name
+</th>
+
+<th 
+rowSpan={4}
+className="min-w-[130px]"
+>
+Class
+</th>
+
+<th 
+rowSpan={4}
+className="min-w-[120px]"
+>
+Year
+</th>
+
 
     {(selectedSubject === "All"
   ? subjects
   : [selectedSubject]
 ).map((subject) => {
 
- const totalColumns = subjectGroups[subject]
-  ? subjectGroups[subject].length * mediums.length * 3 + 1
+ const visibleMediums = getVisibleMediums(subject);
+
+const totalColumns = subjectGroups[subject]
+  ? visibleMediums.reduce(
+      (total, medium) =>
+        total +
+        getVisibleSubSubjects(subject, medium).length * 3,
+      0
+    ) + 1
   : 4;
   return (
-    <th
+  <th
   key={subject}
   colSpan={totalColumns}
   className="border border-gray-400 min-w-[500px]"
 >
-      {subject}
-    </th>
+  <div className="flex items-center justify-center gap-2">
+    <span>{subject}</span>
+
+    <button
+      onClick={() => handleDeleteSubject(subject)}
+      className="text-red-600 hover:text-red-800"
+    >
+      <FiTrash2 size={16} />
+    </button>
+  </div>
+</th>
   );
 
   return (
@@ -301,46 +516,59 @@ const filteredSchools = schools.filter((school) => {
   </tr>
 
   {/* Row 2 */}
-  <tr className="bg-[#f7f3eb]">
-{(selectedSubject === "All"
-  ? subjects
-  : [selectedSubject]
-).map((subject) => {
+ <tr className="bg-[#f7f3eb]">
 
-  if (subjectGroups[subject]) {
-    return (
-  <React.Fragment key={subject}>
-    {mediums.map((medium) => (
-      <th
-        key={medium}
-        colSpan={subjectGroups[subject].length * 3}
-        className="border border-gray-400 text-center"
-      >
-        {medium}
-      </th>
-    ))}
+  {(selectedSubject === "All"
+    ? subjects
+    : [selectedSubject]
+  ).map((subject) => {
 
-    <th
-      rowSpan={3}
-      className="border border-gray-400 min-w-[180px]"
-    >
-      Remark
-    </th>
-  </React.Fragment>
-);
-  }
+    if (subjectGroups[subject]) {
+      return (
+        <React.Fragment key={subject}>
 
-  return (
-    <th
-      key={subject + "-dummy"}
-      colSpan={3}
-      rowSpan={3}
-      className="hidden"
-    ></th>
-  );
-})}
+         {getVisibleMediums(subject).map((medium) => (
+            <th
+              key={medium}
+              colSpan={
+  getVisibleSubSubjects(subject, medium).length * 3
+}
+              className="border border-gray-400 text-center"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <span>{medium}</span>
+
+                <button
+                  onClick={() =>
+                    handleDeleteMedium(subject, medium)
+                  }
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <FiTrash2 size={15} />
+                </button>
+              </div>
+            </th>
+          ))}
+
+        </React.Fragment>
+      );
+    }
+
+    return null;
+  })}
+
+  {/* ================= REMARK ================= */}
+
+  <th
+    rowSpan={3}
+    className="border border-gray-400 min-w-[180px]"
+  >
+    Remark
+  </th>
 
 </tr>
+
+
 <tr className="bg-[#f7f3eb]">
 
 {(selectedSubject === "All"
@@ -350,15 +578,30 @@ const filteredSchools = schools.filter((school) => {
 
   if (!subjectGroups[subject]) return null;
 
-return mediums.flatMap((medium) =>
-  subjectGroups[subject].map((sub) => (
-    <th
-      key={medium + sub}
-      colSpan={3}
-      className="border border-gray-400 min-w-[350px]"
+return getVisibleMediums(subject).flatMap((medium) =>
+  getVisibleSubSubjects(subject, medium).map((sub) => (
+   <th
+  key={medium + sub}
+  colSpan={3}
+  className="border border-gray-400 min-w-[350px]"
+>
+  <div className="flex items-center justify-center gap-2">
+    <span>{sub}</span>
+
+    <button
+      onClick={() =>
+        handleDeleteSubSubject(
+          subject,
+          medium,
+          sub
+        )
+      }
+      className="text-red-600 hover:text-red-800"
     >
-      {sub}
-    </th>
+      <FiTrash2 size={14} />
+    </button>
+  </div>
+</th>
   ))
 );
 
@@ -375,8 +618,11 @@ return mediums.flatMap((medium) =>
 
 if(subjectGroups[subject]){
 
-return mediums.flatMap((medium) => {
-  const headers = subjectGroups[subject].flatMap((sub) => [
+return getVisibleMediums(subject).flatMap((medium) => {
+  const headers = getVisibleSubSubjects(
+    subject,
+    medium
+  ).flatMap((sub) => [
     <th key={medium + sub + "1"}>Name</th>,
     <th key={medium + sub + "2"}>Number</th>,
     <th key={medium + sub + "3"}>Qty</th>,
@@ -395,313 +641,666 @@ return null;
 </thead>
 {/* ================= BODY ================= */}
 
+{/* ================= BODY ================= */}
+
+{/* ================= BODY ================= */}
+
 <tbody>
+
   {filteredSchools.length > 0 ? (
+
     currentSchools.map((school, schoolIndex) => {
+
       const originalIndex = schools.indexOf(school);
 
-      // Maximum rows among all subjects
-   const maxRows = Math.max(
-  1,
-  ...subjects.map((subject) => {
-    // Grouped Subjects
-    if (subjectGroups[subject]) {
-      let max = 1;
+  
 
-      mediums.forEach((medium) => {
-        subjectGroups[subject].forEach((subSubject) => {
-          const len =
-            school.subjects?.[subject]?.[medium]?.[subSubject]?.length || 0;
+     const schoolRowCounts = [];
 
-          if (len > max) max = len;
+["Class 11", "Class 12"].forEach((className) => {
+
+  visibleYears.forEach((year) => {
+
+          const maxRowsForYear = Math.max(
+            1,
+
+            ...subjects.map((subject) => {
+
+              // ================= GROUP SUBJECT =================
+
+              if (subjectGroups[subject]) {
+
+                let max = 1;
+
+                mediums.forEach((medium) => {
+
+                  subjectGroups[subject].forEach((sub) => {
+
+                    const len =
+                      school.classes?.[className]?.[year]
+                        ?.subjects?.[subject]
+                        ?. [medium]
+                        ?. [sub]
+                        ?.length || 0;
+
+                    if (len > max) {
+                      max = len;
+                    }
+
+                  });
+
+                });
+
+                return max;
+              }
+
+              // ================= NORMAL SUBJECT =================
+
+              return (
+                school.classes?.[className]?.[year]
+                  ?.subjects?.[subject]
+                  ?.length || 1
+              );
+
+            })
+          );
+
+          schoolRowCounts.push(maxRowsForYear);
+
         });
+
       });
 
-      return max;
-    }
 
-    // Normal Subjects
-    return school.subjects?.[subject]?.length || 0;
-  })
-);
+      const totalSchoolRows =
+        schoolRowCounts.reduce(
+          (total, rows) => total + rows,
+          0
+        );
+
+
+      // =====================================================
+      // SCHOOL
+      // =====================================================
 
       return (
+
         <React.Fragment key={originalIndex}>
-          {Array.from({ length: maxRows }).map((_, teacherRow) => (
-            <tr key={teacherRow} className="hover:bg-slate-50">
 
-              {/* Show only once */}
-              {teacherRow === 0 && (
-                <>
-                  <td
-                    rowSpan={maxRows}
-                    className="border border-gray-300 p-3 text-center align-top"
-                  >
-                    {startIndex + schoolIndex + 1}
-                  </td>
+       {["Class 11", "Class 12"].map((className) => (
 
-                  <td
-                    rowSpan={maxRows}
-                    className="border border-gray-300 p-3 text-center align-top"
-                  >
-                    {school.code}
-                  </td>
-<td
-  rowSpan={maxRows}
-  className="border border-gray-300 p-3 align-top"
->
-  <div className="flex items-center justify-between gap-2">
-    <span>{school.schoolName}</span>
+  visibleYears.map((year) => {
 
-    <button
-      onClick={() => handleDeleteSchool(originalIndex)}
-      className="text-red-600 hover:bg-red-100 p-1 rounded"
-      title="Delete School"
-    >
-      <FiTrash2 size={16} />
-    </button>
-  </div>
-</td>
+              // =================================================
+              // MAX ROWS FOR CURRENT YEAR
+              // =================================================
 
-                <td
-  rowSpan={maxRows}
-  className="border min-w-[180px] w-[180px] border-gray-300 p-2 align-top"
->
-  <select
-    value={school.grade}
-    onChange={(e) =>
-      handleInputChange(
-        originalIndex,
-        null,
-        null,
-        "grade",
-        e.target.value
-      )
-    }
-    className="w-full bg-transparent text-center outline-none border rounded px-2 py-1"
-  >
-    <option value="">Select Class</option>
-    <option value="Class 11">Class 11</option>
-    <option value="Class 12">Class 12</option>
-  </select>
-</td>
-                </>
-              )}
+              const maxRows = Math.max(
+                1,
 
-              {/* Subject Columns */}
-              {(selectedSubject === "All"
-  ? subjects
-  : [selectedSubject]
-).map((subject) => {
-                if (subjectGroups[subject]) {
-  return (
-    <React.Fragment key={subject}>
-  {mediums.flatMap((medium) =>
-    subjectGroups[subject].flatMap((subSubject) => {
-      const teachers =
-        school.subjects?.[subject]?.[medium]?.[subSubject] || [];
+                ...subjects.map((subject) => {
 
-      const teacher = teachers[teacherRow];
-      const hasRow = teacher !== undefined;
+                  // ================= GROUP =================
 
-      return [
-        <td
-          key={`${medium}-${subSubject}-name`}
-          className="border border-gray-300 p-2"
-        >
-          {hasRow && (
-            <input
-              type="text"
-              value={teacher.teacherName}
-              onChange={(e) =>
-                handleInputChange(
-                  originalIndex,
-                  subject,
-                  teacherRow,
-                  "teacherName",
-                  e.target.value,
-                  medium,
-                  subSubject
-                )
-              }
-              className="w-full bg-transparent text-center outline-none"
-            />
-          )}
-        </td>,
+                  if (subjectGroups[subject]) {
 
-        <td
-          key={`${medium}-${subSubject}-number`}
-          className="border border-gray-300 p-2"
-        >
-          {hasRow && (
-            <input
-              type="text"
-              value={teacher.number}
-              onChange={(e) =>
-                handleInputChange(
-                  originalIndex,
-                  subject,
-                  teacherRow,
-                  "number",
-                  e.target.value,
-                  medium,
-                  subSubject
-                )
-              }
-              className="w-full bg-transparent text-center outline-none"
-            />
-          )}
-        </td>,
+                    let max = 1;
 
-        <td
-          key={`${medium}-${subSubject}-qty`}
-          className="border border-gray-300 p-2"
-        >
-          {hasRow && (
-            <input
-              type="number"
-              value={teacher.qty}
-              onChange={(e) =>
-                handleInputChange(
-                  originalIndex,
-                  subject,
-                  teacherRow,
-                  "qty",
-                  e.target.value,
-                  medium,
-                  subSubject
-                )
-              }
-              className="w-full bg-transparent text-center outline-none"
-            />
-          )}
-        </td>,
-      ];
-    })
-  )}
+                    mediums.forEach((medium) => {
 
-  {/* Remark Column */}
-  <td className="border border-gray-300 p-2">
-    {teacherRow === 0 && (
-      <input
-        type="text"
-        value={school.subjects?.[subject]?.remark || ""}
-        onChange={(e) =>
-          handleInputChange(
-            originalIndex,
-            subject,
-            null,
-            "remark",
-            e.target.value
-          )
-        }
-        className="w-full bg-transparent outline-none"
-      />
-    )}
-  </td>
-</React.Fragment>
-  );
-}
-                const teachers = Array.isArray(
-                  school.subjects?.[subject]
-                )
-                  ? school.subjects[subject]
-                  : [];
+                      subjectGroups[subject].forEach((sub) => {
 
-               const teacher = teachers[teacherRow];
+                        const len =
+                          school.classes?.[className]?.[year]
+                            ?.subjects?.[subject]
+                            ?. [medium]
+                            ?. [sub]
+                            ?.length || 0;
 
-const hasRow = teacher !== undefined;
+                        if (len > max) {
+                          max = len;
+                        }
+
+                      });
+
+                    });
+
+                    return max;
+                  }
+
+                  // ================= NORMAL =================
+
+                  return (
+                    school.classes?.[className]?.[year]
+                      ?.subjects?.[subject]
+                      ?.length || 1
+                  );
+
+                })
+              );
+
+
+              // =================================================
+              // CREATE TABLE ROWS
+              // =================================================
+
+              return Array.from(
+                { length: maxRows }
+              ).map((_, teacherRow) => {
+
+                // =================================================
+                // LAST ROW OF COMPLETE SCHOOL
+                // =================================================
+
+  const lastYear = visibleYears[visibleYears.length - 1];
+
+const isLastSchoolRow =
+  className === "Class 12" &&
+  year === lastYear &&
+  teacherRow === maxRows - 1;
+
 
                 return (
-                  <React.Fragment key={subject}>
-                    {/* Teacher Name */}
-                    <td className="border border-gray-300 p-2">
-  {hasRow && (
-    <input
-      type="text"
-      value={teacher.teacherName}
-      onChange={(e) =>
-        handleInputChange(
-          originalIndex,
-          subject,
-          teacherRow,
-          "teacherName",
-          e.target.value
-        )
-      }
-      className="w-full bg-transparent text-center outline-none"
-    />
-  )}
-</td>
 
-                    {/* Number */}
-                  <td className="border border-gray-300 p-2">
-  {hasRow && (
-    <input
-      type="text"
-      value={teacher.number}
-      onChange={(e) =>
-        handleInputChange(
-          originalIndex,
-          subject,
-          teacherRow,
-          "number",
-          e.target.value
-        )
-      }
-      className="w-full bg-transparent text-center outline-none"
-    />
-  )}
-</td>
+                  <tr
+                    key={`${originalIndex}-${className}-${year}-${teacherRow}`}
+                    className={`
+                      hover:bg-slate-50
+                      ${
+                        isLastSchoolRow
+                          ? "border-b-4 border-gray-700"
+                          : ""
+                      }
+                    `}
+                  >
 
-                    {/* Qty */}
-                   <td className="border border-gray-300 p-2">
-  {hasRow && (
-    <input
-      type="number"
-      value={teacher.qty}
-      onChange={(e) =>
-        handleInputChange(
-          originalIndex,
-          subject,
-          teacherRow,
-          "qty",
-          e.target.value
-        )
-      }
-      className="w-full bg-transparent text-center outline-none"
-    />
-  )}
-</td>
-                  </React.Fragment>
+                    {/* =================================================
+                        S.NO + CODE + SCHOOL NAME
+                    ================================================= */}
+
+     {teacherRow === 0 &&
+  className === "Class 11" &&
+  year === visibleYears[0] && (
+
+                      <>
+
+                        {/* S.NO */}
+
+                        <td
+                          rowSpan={totalSchoolRows}
+                          className="
+                            sticky left-0 z-40
+                            bg-white
+                            border border-gray-300
+                            p-3
+                            text-center
+                            align-top
+                            min-w-[70px]
+                          "
+                        >
+                          {startIndex + schoolIndex + 1}
+                        </td>
+
+
+                        {/* CODE */}
+
+                        <td
+                          rowSpan={totalSchoolRows}
+                          className="
+                            sticky left-0 z-40
+                            bg-white
+                            border border-gray-300
+                            p-3
+                            text-center
+                            align-top
+                            min-w-[70px]
+                          "
+                        >
+                          {school.code}
+                        </td>
+
+
+                        {/* SCHOOL NAME */}
+
+                        <td
+                          rowSpan={totalSchoolRows}
+                          className="
+                            border border-gray-300
+                            px-6 py-5
+                            min-w-[250px]
+                            align-top
+                          "
+                        >
+
+                          <div className="flex justify-between items-start gap-3">
+
+                            <span>
+                              {school.schoolName}
+                            </span>
+
+                            <button
+                              onClick={() =>
+                                handleDeleteSchool(originalIndex)
+                              }
+                              className="
+                                text-red-600
+                                hover:text-red-800
+                              "
+                            >
+                              <FiTrash2 />
+                            </button>
+
+                          </div>
+
+                        </td>
+
+                      </>
+                    )}
+
+
+                    {/* =================================================
+                        CLASS
+                    ================================================= */}
+
+                    {teacherRow === 0 && (
+
+                      <td
+                        rowSpan={maxRows}
+                        className="
+                          border border-gray-300
+                          px-8 py-5
+                          text-center
+                          min-w-[130px]
+                        "
+                      >
+                        {className}
+                      </td>
+
+                    )}
+
+
+                    {/* =================================================
+                        YEAR
+                    ================================================= */}
+
+                    {teacherRow === 0 && (
+
+                      <td
+                        rowSpan={maxRows}
+                        className="
+                          border border-gray-300
+                          px-8 py-5
+                          text-center
+                          min-w-[120px]
+                        "
+                      >
+                        {year}
+                      </td>
+
+                    )}
+
+
+                    {/* =================================================
+                        SUBJECT DATA
+                    ================================================= */}
+
+                    {(selectedSubject === "All"
+                      ? subjects
+                      : [selectedSubject]
+                    ).map((subject) => {
+
+                      // =================================================
+                      // GROUP SUBJECT
+                      // =================================================
+
+                      if (subjectGroups[subject]) {
+
+                        return mediums.flatMap((medium) =>
+
+                          subjectGroups[subject].map((sub) => {
+
+                            const teachers =
+                              school.classes?.[className]?.[year]
+                                ?.subjects?.[subject]
+                                ?. [medium]
+                                ?. [sub] || [];
+
+
+                            const teacher =
+                              teachers[teacherRow] || {};
+
+
+                            return (
+
+                              <React.Fragment
+                                key={`${subject}-${medium}-${sub}`}
+                              >
+
+                                {/* NAME */}
+
+                                <td className="border p-1 text-center">
+
+                                  <input
+                                    type="text"
+                                    value={
+                                      teacher.teacherName || ""
+                                    }
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        originalIndex,
+                                        className,
+                                        year,
+                                        subject,
+                                        medium,
+                                        sub,
+                                        teacherRow,
+                                        "teacherName",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="
+                                      w-full
+                                      px-2 py-1
+                                      bg-transparent
+                                      border-0
+                                      outline-none
+                                      text-center
+                                      text-2xl
+                                      font-bold
+                                    "
+                                  />
+
+                                </td>
+
+
+                                {/* NUMBER */}
+
+                                <td className="border p-1 text-center">
+
+                                  <input
+                                    type="text"
+                                    value={
+                                      teacher.number || ""
+                                    }
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        originalIndex,
+                                        className,
+                                        year,
+                                        subject,
+                                        medium,
+                                        sub,
+                                        teacherRow,
+                                        "number",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="
+                                      w-full
+                                      px-2 py-1
+                                      bg-transparent
+                                      border-0
+                                      outline-none
+                                      text-center
+                                      text-2xl
+                                      font-bold
+                                    "
+                                  />
+
+                                </td>
+
+
+                                {/* QTY */}
+
+                                <td className="border p-1 text-center">
+
+                                  <input
+                                    type="number"
+                                    value={
+                                      teacher.qty || ""
+                                    }
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        originalIndex,
+                                        className,
+                                        year,
+                                        subject,
+                                        medium,
+                                        sub,
+                                        teacherRow,
+                                        "qty",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="
+                                      w-full
+                                      px-2 py-1
+                                      bg-transparent
+                                      border-0
+                                      outline-none
+                                      text-center
+                                      text-2xl
+                                      font-bold
+                                    "
+                                  />
+
+                                </td>
+
+                              </React.Fragment>
+
+                            );
+
+                          })
+
+                        );
+
+                      }
+
+
+                      // =================================================
+                      // NORMAL SUBJECT
+                      // =================================================
+
+                      const teachers =
+                        school.classes?.[className]?.[year]
+                          ?.subjects?.[subject] || [];
+
+
+                      const teacher =
+                        teachers[teacherRow] || {};
+
+
+                      return (
+
+                        <React.Fragment key={subject}>
+
+                          {/* NAME */}
+
+                          <td className="border p-1 text-center">
+
+                            <input
+                              type="text"
+                              value={
+                                teacher.teacherName || ""
+                              }
+                              onChange={(e) =>
+                                handleInputChange(
+                                  originalIndex,
+                                  className,
+                                  year,
+                                  subject,
+                                  null,
+                                  null,
+                                  teacherRow,
+                                  "teacherName",
+                                  e.target.value
+                                )
+                              }
+                              className="
+                                w-full
+                                px-2 py-1
+                                text-center
+                                outline-none
+                              "
+                            />
+
+                          </td>
+
+
+                          {/* NUMBER */}
+
+                          <td className="border p-1 text-center">
+
+                            <input
+                              type="text"
+                              value={
+                                teacher.number || ""
+                              }
+                              onChange={(e) =>
+                                handleInputChange(
+                                  originalIndex,
+                                  className,
+                                  year,
+                                  subject,
+                                  null,
+                                  null,
+                                  teacherRow,
+                                  "number",
+                                  e.target.value
+                                )
+                              }
+                              className="
+                                w-full
+                                px-2 py-1
+                                text-center
+                                outline-none
+                              "
+                            />
+
+                          </td>
+
+
+                          {/* QTY */}
+
+                          <td className="border p-1 text-center">
+
+                            <input
+                              type="number"
+                              value={
+                                teacher.qty || ""
+                              }
+                              onChange={(e) =>
+                                handleInputChange(
+                                  originalIndex,
+                                  className,
+                                  year,
+                                  subject,
+                                  null,
+                                  null,
+                                  teacherRow,
+                                  "qty",
+                                  e.target.value
+                                )
+                              }
+                              className="
+                                w-full
+                                px-2 py-1
+                                text-center
+                                outline-none
+                              "
+                            />
+
+                          </td>
+
+                        </React.Fragment>
+
+                      );
+
+                    })}
+
+
+
+             {teacherRow === 0 &&
+  className === "Class 11" &&
+  year === visibleYears[0] && (
+
+                      <td
+                        rowSpan={totalSchoolRows}
+                        className="
+                          border-l border-r border-gray-300
+                          px-3
+                          align-top
+                          bg-white
+                        "
+                      >
+
+                        <input
+                          type="text"
+                          value={school.remark || ""}
+                          onChange={(e) => {
+
+                            setSchools((prev) =>
+                              prev.map((s, i) =>
+                                i === originalIndex
+                                  ? {
+                                      ...s,
+                                      remark: e.target.value,
+                                    }
+                                  : s
+                              )
+                            );
+
+                          }}
+                          placeholder="Type remark..."
+                          className="
+                            w-full
+                            bg-transparent
+                            border-0
+                            outline-none
+                            text-sm
+                            py-2
+                          "
+                        />
+
+                      </td>
+
+                    )}
+
+                  </tr>
+
                 );
-              })}
-            </tr>
+
+              });
+
+            })
+
           ))}
+
         </React.Fragment>
+
       );
+
     })
+
   ) : (
+
     <tr>
+
       <td
-       colSpan={
-  4 +
-  subjects.reduce((total, subject) => {
-
-    if (subjectGroups[subject]) {
-      return total + subjectGroups[subject].length * mediums.length * 3+1;
-    }
-
-    return total + 3;
-
-  }, 0)
-}
-        className="p-10 text-center text-gray-500"
+        colSpan={20}
+        className="
+          p-10
+          text-center
+          text-gray-500
+        "
       >
         No School Found
       </td>
+
     </tr>
+
   )}
+
 </tbody>
         </table>
       </div>
