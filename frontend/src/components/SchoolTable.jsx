@@ -478,10 +478,10 @@ const totalColumns = subjectGroups[subject]
   ? visibleMediums.reduce(
       (total, medium) =>
         total +
-        getVisibleSubSubjects(subject, medium).length * 3,
+        getVisibleSubSubjects(subject, medium).length * 2,
       0
     ) + 1
-  : 4;
+  : 3;
   return (
   <th
   key={subject}
@@ -531,7 +531,7 @@ const totalColumns = subjectGroups[subject]
             <th
               key={medium}
               colSpan={
-  getVisibleSubSubjects(subject, medium).length * 3
+  getVisibleSubSubjects(subject, medium).length * 2
 }
               className="border border-gray-400 text-center"
             >
@@ -582,7 +582,7 @@ return getVisibleMediums(subject).flatMap((medium) =>
   getVisibleSubSubjects(subject, medium).map((sub) => (
    <th
   key={medium + sub}
-  colSpan={3}
+  colSpan={2}
   className="border border-gray-400 min-w-[350px]"
 >
   <div className="flex items-center justify-center gap-2">
@@ -625,7 +625,7 @@ return getVisibleMediums(subject).flatMap((medium) => {
   ).flatMap((sub) => [
     <th key={medium + sub + "1"}>Name</th>,
     <th key={medium + sub + "2"}>Number</th>,
-    <th key={medium + sub + "3"}>Qty</th>,
+   
   ]);
   return headers;
 });
@@ -978,113 +978,52 @@ const isLastSchoolRow =
 
                                 {/* NAME */}
 
-                                <td className="border p-1 text-center">
+                               <td className="border p-1 text-center min-w-[220px]">
+  <input
+    type="text"
+    value={teacher.teacherName || ""}
+    onChange={(e) =>
+      handleInputChange(
+        originalIndex, className, year, subject,
+        medium, sub, teacherRow, "teacherName", e.target.value
+      )
+    }
+    className="
+      w-full
+      px-4 py-1
+      bg-transparent
+      border-0
+      outline-none
+      text-center
+      text-lg
+      font-bold
+    "
+  />
+</td>
 
-                                  <input
-                                    type="text"
-                                    value={
-                                      teacher.teacherName || ""
-                                    }
-                                    onChange={(e) =>
-                                      handleInputChange(
-                                        originalIndex,
-                                        className,
-                                        year,
-                                        subject,
-                                        medium,
-                                        sub,
-                                        teacherRow,
-                                        "teacherName",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="
-                                      w-full
-                                      px-2 py-1
-                                      bg-transparent
-                                      border-0
-                                      outline-none
-                                      text-center
-                                      text-2xl
-                                      font-bold
-                                    "
-                                  />
+<td className="border p-1 text-center min-w-[180px]">
+  <input
+    type="text"
+    value={teacher.number || ""}
+    onChange={(e) =>
+      handleInputChange(
+        originalIndex, className, year, subject,
+        medium, sub, teacherRow, "number", e.target.value
+      )
+    }
+    className="
+      w-full
+      px-4 py-1
+      bg-transparent
+      border-0
+      outline-none
+      text-center
+      text-lg
+      font-bold
+    "
+  />
+</td>
 
-                                </td>
-
-
-                                {/* NUMBER */}
-
-                                <td className="border p-1 text-center">
-
-                                  <input
-                                    type="text"
-                                    value={
-                                      teacher.number || ""
-                                    }
-                                    onChange={(e) =>
-                                      handleInputChange(
-                                        originalIndex,
-                                        className,
-                                        year,
-                                        subject,
-                                        medium,
-                                        sub,
-                                        teacherRow,
-                                        "number",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="
-                                      w-full
-                                      px-2 py-1
-                                      bg-transparent
-                                      border-0
-                                      outline-none
-                                      text-center
-                                      text-2xl
-                                      font-bold
-                                    "
-                                  />
-
-                                </td>
-
-
-                                {/* QTY */}
-
-                                <td className="border p-1 text-center">
-
-                                  <input
-                                    type="number"
-                                    value={
-                                      teacher.qty || ""
-                                    }
-                                    onChange={(e) =>
-                                      handleInputChange(
-                                        originalIndex,
-                                        className,
-                                        year,
-                                        subject,
-                                        medium,
-                                        sub,
-                                        teacherRow,
-                                        "qty",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="
-                                      w-full
-                                      px-2 py-1
-                                      bg-transparent
-                                      border-0
-                                      outline-none
-                                      text-center
-                                      text-2xl
-                                      font-bold
-                                    "
-                                  />
-
-                                </td>
 
                               </React.Fragment>
 
@@ -1182,36 +1121,7 @@ const isLastSchoolRow =
 
                           {/* QTY */}
 
-                          <td className="border p-1 text-center">
-
-                            <input
-                              type="number"
-                              value={
-                                teacher.qty || ""
-                              }
-                              onChange={(e) =>
-                                handleInputChange(
-                                  originalIndex,
-                                  className,
-                                  year,
-                                  subject,
-                                  null,
-                                  null,
-                                  teacherRow,
-                                  "qty",
-                                  e.target.value
-                                )
-                              }
-                              className="
-                                w-full
-                                px-2 py-1
-                                text-center
-                                outline-none
-                              "
-                            />
-
-                          </td>
-
+                       
                         </React.Fragment>
 
                       );
