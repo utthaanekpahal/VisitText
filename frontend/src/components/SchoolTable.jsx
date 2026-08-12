@@ -77,13 +77,101 @@ const getVisibleSubSubjects = (subject, medium) => {
     (sub) => !deleted.includes(sub)
   );
 };
+
+
+// ================= EDIT SUBJECT =================
+const handleEditSubject = (oldSubject, newSubject) => {
+  if (!newSubject.trim() || oldSubject === newSubject) return;
+
+  const value = newSubject.trim();
+
+  setSchools((prev) =>
+    prev.map((school) => {
+      const newSchool = structuredClone(school);
+
+      ["Class 11", "Class 12"].forEach((className) => {
+        Object.keys(newSchool.classes?.[className] || {}).forEach((year) => {
+          const subjectsData =
+            newSchool.classes?.[className]?.[year]?.subjects;
+
+          if (!subjectsData || !subjectsData[oldSubject]) return;
+
+          subjectsData[value] = subjectsData[oldSubject];
+          delete subjectsData[oldSubject];
+        });
+      });
+
+      return newSchool;
+    })
+  );
+};
+
+
+// ================= EDIT MEDIUM =================
+const handleEditMedium = (subject, oldMedium, newMedium) => {
+  if (!newMedium.trim() || oldMedium === newMedium) return;
+
+  const value = newMedium.trim();
+
+  setSchools((prev) =>
+    prev.map((school) => {
+      const newSchool = structuredClone(school);
+
+      ["Class 11", "Class 12"].forEach((className) => {
+        Object.keys(newSchool.classes?.[className] || {}).forEach((year) => {
+          const subjectData =
+            newSchool.classes?.[className]?.[year]?.subjects?.[subject];
+
+          if (!subjectData || !subjectData[oldMedium]) return;
+
+          subjectData[value] = subjectData[oldMedium];
+          delete subjectData[oldMedium];
+        });
+      });
+
+      return newSchool;
+    })
+  );
+};
+
+
+// ================= EDIT SUB SUBJECT =================
+const handleEditSubSubject = (
+  subject,
+  medium,
+  oldSub,
+  newSub
+) => {
+  if (!newSub.trim() || oldSub === newSub) return;
+
+  const value = newSub.trim();
+
+  setSchools((prev) =>
+    prev.map((school) => {
+      const newSchool = structuredClone(school);
+
+      ["Class 11", "Class 12"].forEach((className) => {
+        Object.keys(newSchool.classes?.[className] || {}).forEach((year) => {
+          const mediumData =
+            newSchool.classes?.[className]?.[year]
+              ?.subjects?.[subject]?.[medium];
+
+          if (!mediumData || !mediumData[oldSub]) return;
+
+          mediumData[value] = mediumData[oldSub];
+          delete mediumData[oldSub];
+        });
+      });
+
+      return newSchool;
+    })
+  );
+};
+
+
   const rowsPerPage = 5;
 
 
-
-
- 
-  // Search
  // Search + Quantity Filter
 const filteredSchools = schools.filter((school) => {
   const searchText = search.trim().toLowerCase();
@@ -242,27 +330,7 @@ const filteredSchools = schools.filter((school) => {
 />
     
 
-    <select
-      value={qtyRange}
-      onChange={(e) => {
-        setQtyRange(e.target.value);
-        setCurrentPage(1);
-      }}
-      className="rounded-lg border border-gray-300 px-4 py-2"
-    >
-      <option value="">All Qty</option>
-      <option value="1-10">1 - 10</option>
-      <option value="11-20">11 - 20</option>
-      <option value="21-30">21 - 30</option>
-      <option value="31-40">31 - 40</option>
-      <option value="41-50">41 - 50</option>
-      <option value="51-60">51 - 60</option>
-      <option value="61-70">61 - 70</option>
-      <option value="71-80">71 - 80</option>
-      <option value="81-90">81 - 90</option>
-      <option value="91-100">91 - 100</option>
-      <option value="101+">101+</option>
-    </select>
+   
      <select
   value={selectedSubject}
   onChange={(e) => {
@@ -489,7 +557,28 @@ const totalColumns = subjectGroups[subject]
   className="border border-gray-400 min-w-[500px]"
 >
   <div className="flex items-center justify-center gap-2">
-    <span>{subject}</span>
+    <input
+  type="text"
+  defaultValue={subject}
+  onBlur={(e) =>
+    handleEditSubject(subject, e.target.value)
+  }
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.target.blur();
+    }
+  }}
+  className="
+    bg-transparent
+    border-0
+    outline-none
+    text-center
+    font-bold
+    w-[150px]
+    cursor-text
+   
+  "
+/>
 
     <button
       onClick={() => handleDeleteSubject(subject)}
@@ -586,7 +675,32 @@ return getVisibleMediums(subject).flatMap((medium) =>
   className="border border-gray-400 min-w-[350px]"
 >
   <div className="flex items-center justify-center gap-2">
-    <span>{sub}</span>
+    <input
+  type="text"
+  defaultValue={sub}
+  onBlur={(e) =>
+    handleEditSubSubject(
+      subject,
+      medium,
+      sub,
+      e.target.value
+    )
+  }
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.target.blur();
+    }
+  }}
+  className="
+    bg-transparent
+    border-0
+    outline-none
+    text-center
+    font-bold
+    w-[150px]
+    cursor-text
+  "
+/>
 
     <button
       onClick={() =>

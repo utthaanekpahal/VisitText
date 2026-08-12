@@ -17,6 +17,7 @@ const [selectedSubject, setSelectedSubject] = useState("");
 
 const [selectedClass, setSelectedClass] = useState("Class 11");
 const [selectedYear, setSelectedYear] = useState("2026");
+const [selectedExportYears, setSelectedExportYears] = useState([]);
 const [deletedMediums, setDeletedMediums] = useState({});
 
 const [deletedSubSubjects, setDeletedSubSubjects] = useState({});
@@ -375,9 +376,29 @@ return Object.values(subjectData).some((medium)=>{
 };  
 
 
+const toggleExportYear = (year) => {
+  setSelectedExportYears((prev) => {
+    if (prev.includes(year)) {
+      return prev.filter((y) => y !== year);
+    }
+
+    return [...prev, year].sort(
+      (a, b) => Number(a) - Number(b)
+    );
+  });
+};
 
 const handleExport = (type) => {
   try {
+    // =====================================================
+    // CHECK SELECTED EXPORT YEARS
+    // =====================================================
+
+    if (selectedExportYears.length === 0) {
+      alert("Please select at least one year for export.");
+      return;
+    }
+
     // =====================================================
     // LATEST DATA FROM LOCAL STORAGE
     // =====================================================
@@ -404,6 +425,23 @@ const handleExport = (type) => {
       : years;
 
     // =====================================================
+    // VALIDATE SELECTED YEARS
+    // =====================================================
+
+    const validExportYears = selectedExportYears.filter(
+      (year) =>
+        exportYears.some(
+          (existingYear) =>
+            String(existingYear) === String(year)
+        )
+    );
+
+    if (validExportYears.length === 0) {
+      alert("Selected export years are not available.");
+      return;
+    }
+
+    // =====================================================
     // ROWS + MERGES
     // =====================================================
 
@@ -427,7 +465,10 @@ const handleExport = (type) => {
     rows.push(["", "", "", "", "", ""]);
     rows.push(["", "", "", "", "", ""]);
 
-    // Subject columns start from column 6
+    // =====================================================
+    // SUBJECT COLUMNS
+    // =====================================================
+
     let colIndex = 6;
 
     // =====================================================
@@ -445,7 +486,6 @@ const handleExport = (type) => {
         const subSubjects =
           exportSubjectGroups[subject];
 
-        // ONLY Name + Number
         const totalCols =
           subSubjects.length * 2 * 2;
 
@@ -471,7 +511,6 @@ const handleExport = (type) => {
 
         ["English Medium", "Hindi Medium"].forEach(
           (medium) => {
-
             const mediumCols =
               subSubjects.length * 2;
 
@@ -497,8 +536,6 @@ const handleExport = (type) => {
             // =================================================
 
             subSubjects.forEach((sub) => {
-
-              // Sub Subject Merge
               merges.push({
                 s: {
                   r: 2,
@@ -512,7 +549,6 @@ const handleExport = (type) => {
 
               rows[2][mediumStart] = sub;
 
-              // ONLY TWO COLUMNS
               rows[3][mediumStart] = "Name";
               rows[3][mediumStart + 1] = "Number";
 
@@ -531,7 +567,6 @@ const handleExport = (type) => {
       else {
         rows[0][startCol] = subject;
 
-        // ONLY 2 COLUMNS
         merges.push({
           s: {
             r: 0,
@@ -551,7 +586,8 @@ const handleExport = (type) => {
     });
 
     // =====================================================
-    // CHECK SCHOOL HAS FILLED DATA
+    // CHECK SCHOOL DATA
+    // SELECTED EXPORT YEARS ONLY
     // =====================================================
 
     const checkSchoolHasData = (school) => {
@@ -559,38 +595,37 @@ const handleExport = (type) => {
 
       ["Class 11", "Class 12"].forEach(
         (className) => {
+          // ===============================================
+          // ONLY SELECTED EXPORT YEARS
+          // ===============================================
 
-          exportYears.forEach((year) => {
-
+          validExportYears.forEach((year) => {
             const classData =
-              school.classes?.[className]?.[year];
+              school.classes?.[
+                className
+              ]?.[year];
 
             if (!classData) return;
 
             exportSubjects.forEach((subject) => {
-
               const data =
                 classData?.subjects?.[subject];
 
               if (!data) return;
 
-              // =============================================
+              // =========================================
               // GROUP SUBJECT
-              // =============================================
+              // =========================================
 
               if (!Array.isArray(data)) {
-
                 Object.values(data).forEach(
                   (mediumData) => {
-
                     Object.values(
                       mediumData || {}
                     ).forEach(
                       (subArray) => {
-
                         (subArray || []).forEach(
                           (item) => {
-
                             if (
                               String(
                                 item?.teacherName || ""
@@ -606,26 +641,20 @@ const handleExport = (type) => {
                             ) {
                               filled = true;
                             }
-
                           }
                         );
-
                       }
                     );
-
                   }
                 );
-
               }
 
-              // =============================================
+              // =========================================
               // NORMAL SUBJECT
-              // =============================================
+              // =========================================
 
               else {
-
                 data.forEach((item) => {
-
                   if (
                     String(
                       item?.teacherName || ""
@@ -641,15 +670,10 @@ const handleExport = (type) => {
                   ) {
                     filled = true;
                   }
-
                 });
-
               }
-
             });
-
           });
-
         }
       );
 
@@ -662,13 +686,12 @@ const handleExport = (type) => {
 
     exportSchools.forEach(
       (school, index) => {
-
         const schoolHasFilledData =
           checkSchoolHasData(school);
 
-        // ===============================================
+        // =================================================
         // FILLED EXPORT
-        // ===============================================
+        // =================================================
 
         if (
           type === "filled" &&
@@ -677,9 +700,9 @@ const handleExport = (type) => {
           return;
         }
 
-        // ===============================================
+        // =================================================
         // EMPTY EXPORT
-        // ===============================================
+        // =================================================
 
         if (
           type === "empty" &&
@@ -688,16 +711,15 @@ const handleExport = (type) => {
           return;
         }
 
-        // ===============================================
+        // =================================================
         // CLASS 11 + CLASS 12
-        // ===============================================
+        // SELECTED YEARS ONLY
+        // =================================================
 
         ["Class 11", "Class 12"].forEach(
           (className) => {
-
-            exportYears.forEach(
+            validExportYears.forEach(
               (year) => {
-
                 const classData =
                   school.classes?.[
                     className
@@ -722,7 +744,6 @@ const handleExport = (type) => {
 
                 exportSubjects.forEach(
                   (subject) => {
-
                     const data =
                       classData?.subjects?.[
                         subject
@@ -736,13 +757,11 @@ const handleExport = (type) => {
                       data &&
                       !Array.isArray(data)
                     ) {
-
                       [
                         "English Medium",
                         "Hindi Medium",
                       ].forEach(
                         (medium) => {
-
                           const subSubjects =
                             exportSubjectGroups[
                               subject
@@ -750,7 +769,6 @@ const handleExport = (type) => {
 
                           subSubjects.forEach(
                             (sub) => {
-
                               const teachers =
                                 data?.[
                                   medium
@@ -759,7 +777,6 @@ const handleExport = (type) => {
                               const teacher =
                                 teachers[0] || {};
 
-                              // ONLY NAME + NUMBER
                               row.push(
                                 teacher.teacherName ||
                                   "",
@@ -767,13 +784,10 @@ const handleExport = (type) => {
                                 teacher.number ||
                                   ""
                               );
-
                             }
                           );
-
                         }
                       );
-
                     }
 
                     // =======================================
@@ -781,14 +795,12 @@ const handleExport = (type) => {
                     // =======================================
 
                     else {
-
                       const teachers =
                         data || [];
 
                       const teacher =
                         teachers[0] || {};
 
-                      // ONLY NAME + NUMBER
                       row.push(
                         teacher.teacherName ||
                           "",
@@ -796,9 +808,7 @@ const handleExport = (type) => {
                         teacher.number ||
                           ""
                       );
-
                     }
-
                   }
                 );
 
@@ -817,14 +827,15 @@ const handleExport = (type) => {
                     "Pending Book Entry";
                 }
 
-                rows.push(row);
+                // =========================================
+                // ADD ROW
+                // =========================================
 
+                rows.push(row);
               }
             );
-
           }
         );
-
       }
     );
 
@@ -833,11 +844,14 @@ const handleExport = (type) => {
     // =====================================================
 
     if (rows.length <= 4) {
-
       alert(
         type === "filled"
-          ? "No filled school data found."
-          : "No empty school data found."
+          ? `No filled school data found for ${validExportYears.join(
+              ", "
+            )}.`
+          : `No empty school data found for ${validExportYears.join(
+              ", "
+            )}.`
       );
 
       return;
@@ -868,7 +882,6 @@ const handleExport = (type) => {
           length: totalColumns,
         },
         (_, index) => {
-
           if (index === 0)
             return { wch: 8 };
 
@@ -905,18 +918,37 @@ const handleExport = (type) => {
     );
 
     // =====================================================
+    // FILE NAME
+    // =====================================================
+
+    const yearText =
+      validExportYears.join("_");
+
+    const fileName =
+      type === "filled"
+        ? `School_Filled_Records_${yearText}.xlsx`
+        : `School_Empty_Records_${yearText}.xlsx`;
+
+    // =====================================================
     // DOWNLOAD
     // =====================================================
 
     XLSX.writeFile(
       wb,
-      type === "filled"
-        ? "School_Filled_Records.xlsx"
-        : "School_Empty_Records.xlsx"
+      fileName
+    );
+
+    // =====================================================
+    // SUCCESS
+    // =====================================================
+
+    alert(
+      `${type === "filled" ? "Filled" : "Empty"} records exported for: ${validExportYears.join(
+        ", "
+      )}`
     );
 
   } catch (error) {
-
     console.error(
       "Export failed:",
       error
@@ -928,10 +960,6 @@ const handleExport = (type) => {
   }
 };
 
-
-
-  
-  
 
 const handleDeleteSchool = (schoolIndex) => {
   // ==========================================
@@ -1177,9 +1205,6 @@ const handleDeleteSubSubject = (
     })
   );
 };
-
-
-
 
 
 
@@ -1725,71 +1750,47 @@ setSchools((prev) => [
 
 
 
-<div className="flex items-center gap-4 mb-6 bg-white p-4 rounded-xl shadow">
-  <select
-  value={selectedSchool ?? ""}
-  onChange={(e) => {
-    const value = e.target.value;
-    setSelectedSchool(value === "" ? null : Number(value));
-  }}
->
-    <option value="">Select School</option>
-    {schools.map((school, index) => (
-      <option key={index} value={index}>
-        {school.schoolName}
-      </option>
-    ))}
-  </select>
 
-  <select
-    value={selectedSubject}
-    onChange={(e) => setSelectedSubject(e.target.value)}
-    className="border rounded-lg px-3 py-2"
-  >
-    <option value="">Select Subject</option>
-    {subjects.map((subject) => (
-      <option key={subject} value={subject}>
-        {subject}
-      </option>
-    ))}
-  </select>
-  <select
- value={selectedClass}
- onChange={(e)=>setSelectedClass(e.target.value)}
- className="border rounded-lg px-3 py-2"
->
-<option value="Class 11">Class 11</option>
-<option value="Class 12">Class 12</option>
-</select>
+<div className="flex items-center gap-3">
 
-
-<select
-  value={selectedYear}
-  onChange={(e) => setSelectedYear(e.target.value)}
-  className="border rounded-lg px-3 py-2"
->
-  {years.map((year) => (
-    <option key={year} value={year}>
-      {year}
-    </option>
-  ))}
-</select>
-
+  {/* ADD YEAR */}
   <button
-    onClick={addTeacherRow}
-    className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700"
+    onClick={handleAddYear}
+    className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
   >
-    + Add Teacher Row
+    + Add Year
   </button>
+
+  {/* EXPORT YEAR */}
+  <div className="relative">
+    <details className="relative">
+      <summary className="list-none cursor-pointer bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
+        Export Year ▼
+      </summary>
+
+      <div className="absolute z-50 mt-2 w-48 rounded-lg border bg-white p-3 shadow-lg">
+
+        {years.map((year) => (
+          <label
+            key={year}
+            className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-slate-100 rounded"
+          >
+            <input
+              type="checkbox"
+              checked={selectedExportYears.includes(year)}
+              onChange={() => toggleExportYear(year)}
+              className="h-4 w-4"
+            />
+
+            <span>{year}</span>
+          </label>
+        ))}
+
+      </div>
+    </details>
+  </div>
+
 </div>
-
-<button
-  onClick={handleAddYear}
-  className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
->
-  + Add Year
-</button>
-
       {/* ================= TABLE ================= */}
 
 <SchoolTable
