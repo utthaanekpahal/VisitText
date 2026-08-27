@@ -10,7 +10,6 @@ import {
 import SchoolTable from "../components/SchoolTable";
 import ImportExcel from "../components/ImportExcel";
 
-
 export default function SchoolRecords() {
 const [selectedSchool, setSelectedSchool] = useState(null);
 const [selectedSubject, setSelectedSubject] = useState("");
@@ -32,9 +31,7 @@ const [years, setYears] = useState(() => {
     return ["2026", "2027", "2028"];
   }
 });
-// ===============================
-// SAVE YEARS TO LOCAL STORAGE
-// ===============================
+
 useEffect(() => {
   localStorage.setItem("schoolYears", JSON.stringify(years));
 }, [years]);
@@ -51,9 +48,7 @@ const [schools, setSchools] = useState(() => {
     return [];
   }
 });
-// ===============================
-// SAVE ALL SCHOOL DATA
-// ===============================
+
 useEffect(() => {
   localStorage.setItem("schoolRecords", JSON.stringify(schools));
 }, [schools]);
@@ -81,12 +76,11 @@ const [subjects, setSubjects] = useState(() => {
     ];
   }
 });
-// ===============================
-// SAVE SUBJECTS
-// ===============================
+
 useEffect(() => {
   localStorage.setItem("schoolSubjects", JSON.stringify(subjects));
 }, [subjects]);
+
 const [subjectGroups, setSubjectGroups] = useState(() => {
   try {
     const saved = localStorage.getItem("schoolSubjectGroups");
@@ -129,9 +123,7 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
   }
 });
 
-// ===============================
-// SAVE SUBJECT GROUPS
-// ===============================
+
 useEffect(() => {
   localStorage.setItem(
     "schoolSubjectGroups",
@@ -143,8 +135,6 @@ const [mediums, setMediums] = useState([
   "English Medium",
   "Hindi Medium",
 ]);
-
-
 
 
 const createSubjectData = () => {
@@ -275,7 +265,7 @@ if(!subjects[subject][medium][subSubject]){
 if(!subjects[subject][medium][subSubject][rowIndex]){
 
 subjects[subject][medium][subSubject][rowIndex]={
- principal:"",
+
   teacherName:"",
  number:""
  
@@ -393,16 +383,16 @@ const toggleExportYear = (year) => {
 const handleExport = (type) => {
   try {
     // =====================================================
-    // CHECK SELECTED EXPORT YEARS
+    // VALIDATE SELECTED YEARS
     // =====================================================
 
-    if (selectedExportYears.length === 0) {
+    if (!selectedExportYears || selectedExportYears.length === 0) {
       alert("Please select at least one year for export.");
       return;
     }
 
     // =====================================================
-    // LATEST DATA FROM LOCAL STORAGE
+    // GET LOCAL STORAGE DATA
     // =====================================================
 
     const savedSchools = localStorage.getItem("schoolRecords");
@@ -427,7 +417,7 @@ const handleExport = (type) => {
       : years;
 
     // =====================================================
-    // VALIDATE SELECTED YEARS
+    // VALID YEARS
     // =====================================================
 
     const validExportYears = selectedExportYears.filter((year) =>
@@ -450,7 +440,7 @@ const handleExport = (type) => {
     const merges = [];
 
     // =====================================================
-    // MAIN HEADER
+    // HEADER ROW 1
     // =====================================================
 
     rows.push([
@@ -459,18 +449,103 @@ const handleExport = (type) => {
       "School Name",
       "Class",
       "Year",
+      "Principal",
       "Remarks",
     ]);
 
-    rows.push(["", "", "", "", "", ""]);
-    rows.push(["", "", "", "", "", ""]);
-    rows.push(["", "", "", "", "", ""]);
-
     // =====================================================
-    // SUBJECT COLUMNS
+    // HEADER ROW 2
     // =====================================================
 
-    let colIndex = 6;
+    rows.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    // =====================================================
+    // HEADER ROW 3
+    // =====================================================
+
+    rows.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    // =====================================================
+    // HEADER ROW 4
+    // =====================================================
+
+    rows.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    // =====================================================
+    // COMMON HEADER MERGES
+    // =====================================================
+
+    // S.No
+    merges.push({
+      s: { r: 0, c: 0 },
+      e: { r: 3, c: 0 },
+    });
+
+    // Code
+    merges.push({
+      s: { r: 0, c: 1 },
+      e: { r: 3, c: 1 },
+    });
+
+    // School Name
+    merges.push({
+      s: { r: 0, c: 2 },
+      e: { r: 3, c: 2 },
+    });
+
+    // Class
+    merges.push({
+      s: { r: 0, c: 3 },
+      e: { r: 3, c: 3 },
+    });
+
+    // Year
+    merges.push({
+      s: { r: 0, c: 4 },
+      e: { r: 3, c: 4 },
+    });
+
+    // Principal
+    merges.push({
+      s: { r: 0, c: 5 },
+      e: { r: 3, c: 5 },
+    });
+
+    // Remarks
+    merges.push({
+      s: { r: 0, c: 6 },
+      e: { r: 3, c: 6 },
+    });
+
+    // =====================================================
+    // SUBJECT START COLUMN
+    // =====================================================
+
+    let colIndex = 7;
 
     // =====================================================
     // SUBJECT HEADERS
@@ -486,16 +561,12 @@ const handleExport = (type) => {
       if (exportSubjectGroups[subject]) {
         const subSubjects = exportSubjectGroups[subject];
 
-        // IMPORTANT:
-        // Each sub subject = Principal + Name + Number
-        // 3 columns
-        // 2 mediums
         const totalCols =
-          subSubjects.length * 3 * 2;
+          subSubjects.length * 2 * 2;
 
-        // =================================================
-        // MAIN SUBJECT MERGE
-        // =================================================
+        // ===============================================
+        // SUBJECT MERGE
+        // ===============================================
 
         merges.push({
           s: {
@@ -512,67 +583,71 @@ const handleExport = (type) => {
 
         let mediumStart = startCol;
 
-        // =================================================
-        // ENGLISH + HINDI MEDIUM
-        // =================================================
+        // ===============================================
+        // MEDIUMS
+        // ===============================================
 
-        ["English Medium", "Hindi Medium"].forEach(
-          (medium) => {
-            // Each sub subject has 3 columns:
-            // Principal | Name | Number
+        [
+          "English Medium",
+          "Hindi Medium",
+        ].forEach((medium) => {
+          const mediumCols =
+            subSubjects.length * 2;
 
-            const mediumCols =
-              subSubjects.length * 3;
+          // =============================================
+          // MEDIUM MERGE
+          // =============================================
 
-            // =================================================
-            // MEDIUM MERGE
-            // =================================================
+          merges.push({
+            s: {
+              r: 1,
+              c: mediumStart,
+            },
+            e: {
+              r: 1,
+              c: mediumStart + mediumCols - 1,
+            },
+          });
+
+          rows[1][mediumStart] = medium;
+
+          // =============================================
+          // SUB SUBJECTS
+          // =============================================
+
+          subSubjects.forEach((sub) => {
+            // ===========================================
+            // SUB SUBJECT MERGE
+            // ===========================================
 
             merges.push({
               s: {
-                r: 1,
+                r: 2,
                 c: mediumStart,
               },
               e: {
-                r: 1,
-                c:
-                  mediumStart +
-                  mediumCols -
-                  1,
+                r: 2,
+                c: mediumStart + 1,
               },
             });
 
-            rows[1][mediumStart] = medium;
+            rows[2][mediumStart] = sub;
 
-            // =================================================
-            // SUB SUBJECT
-            // =================================================
+            // ===========================================
+            // NAME
+            // ===========================================
 
-            subSubjects.forEach((sub) => {
-              // Merge sub subject across 3 columns
-              merges.push({
-                s: {
-                  r: 2,
-                  c: mediumStart,
-                },
-                e: {
-                  r: 2,
-                  c: mediumStart + 2,
-                },
-              });
+            rows[3][mediumStart] = "Name";
 
-              rows[2][mediumStart] = sub;
+            // ===========================================
+            // NUMBER
+            // ===========================================
 
-              // IMPORTANT:
-              // Principal | Name | Number
-              rows[3][mediumStart] = "Principal";
-              rows[3][mediumStart + 1] = "Name";
-              rows[3][mediumStart + 2] = "Number";
+            rows[3][mediumStart + 1] = "Number";
 
-              mediumStart += 3;
-            });
-          }
-        );
+            mediumStart += 2;
+          });
+        });
 
         colIndex += totalCols;
       }
@@ -584,8 +659,9 @@ const handleExport = (type) => {
       else {
         rows[0][startCol] = subject;
 
-        // Normal subject has:
-        // Principal | Name | Number
+        // ===============================================
+        // NORMAL SUBJECT MERGE
+        // ===============================================
 
         merges.push({
           s: {
@@ -594,21 +670,28 @@ const handleExport = (type) => {
           },
           e: {
             r: 2,
-            c: startCol + 2,
+            c: startCol + 1,
           },
         });
 
-        rows[3][startCol] = "Principal";
-        rows[3][startCol + 1] = "Name";
-        rows[3][startCol + 2] = "Number";
+        // ===============================================
+        // NAME
+        // ===============================================
 
-        colIndex += 3;
+        rows[3][startCol] = "Name";
+
+        // ===============================================
+        // NUMBER
+        // ===============================================
+
+        rows[3][startCol + 1] = "Number";
+
+        colIndex += 2;
       }
     });
 
     // =====================================================
-    // HELPER
-    // MULTIPLE VALUES VERTICALLY IN ONE CELL
+    // GET VERTICAL VALUES
     // =====================================================
 
     const getVerticalValues = (teachers, field) => {
@@ -617,83 +700,158 @@ const handleExport = (type) => {
       }
 
       return teachers
-        .map((teacher) => {
-          return String(
+        .map((teacher) =>
+          String(
             teacher?.[field] ?? ""
-          ).trim();
-        })
+          ).trim()
+        )
         .filter((value) => value !== "")
         .join("\n");
     };
 
     // =====================================================
-    // CHECK SCHOOL DATA
-    // SELECTED EXPORT YEARS ONLY
+    // GET CLASS-WISE PRINCIPAL
+    // =====================================================
+
+    const getClassPrincipal = (
+      school,
+      className
+    ) => {
+      return String(
+        school?.principal?.[className] ?? ""
+      ).trim();
+    };
+
+    // =====================================================
+    // GET CLASS-WISE REMARK
+    // =====================================================
+
+    const getClassRemark = (
+      school,
+      className
+    ) => {
+      return String(
+        school?.remark?.[className] ?? ""
+      ).trim();
+    };
+
+    // =====================================================
+    // CHECK SCHOOL HAS DATA
     // =====================================================
 
     const checkSchoolHasData = (school) => {
       let filled = false;
 
-      ["Class 11", "Class 12"].forEach((className) => {
+      // ===================================================
+      // CLASS 11 + CLASS 12
+      // ===================================================
+
+      [
+        "Class 11",
+        "Class 12",
+      ].forEach((className) => {
+
+        // ===============================================
+        // CHECK PRINCIPAL
+        // ===============================================
+
+        const principal =
+          getClassPrincipal(
+            school,
+            className
+          );
+
+        if (principal !== "") {
+          filled = true;
+        }
+
+        // ===============================================
+        // CHECK REMARK
+        // ===============================================
+
+        const classRemark =
+          getClassRemark(
+            school,
+            className
+          );
+
+        if (classRemark !== "") {
+          filled = true;
+        }
+
+        // ===============================================
+        // CHECK YEARS
+        // ===============================================
+
         validExportYears.forEach((year) => {
           const classData =
-            school.classes?.[className]?.[year];
+            school.classes?.[
+              className
+            ]?.[year];
 
-          if (!classData) return;
+          if (!classData) {
+            return;
+          }
+
+          // =============================================
+          // SUBJECTS
+          // =============================================
 
           exportSubjects.forEach((subject) => {
             const data =
-              classData?.subjects?.[subject];
+              classData?.subjects?.[
+                subject
+              ];
 
-            if (!data) return;
+            if (!data) {
+              return;
+            }
 
-            // =============================================
+            // =========================================
             // GROUP SUBJECT
-            // =============================================
+            // =========================================
 
             if (!Array.isArray(data)) {
               Object.values(data).forEach(
                 (mediumData) => {
+
                   Object.values(
                     mediumData || {}
-                  ).forEach((subArray) => {
-                    if (!Array.isArray(subArray)) {
-                      return;
-                    }
+                  ).forEach(
+                    (subArray) => {
 
-                    subArray.forEach((item) => {
-                      if (
-                        String(
-                          item?.principal ?? ""
-                        ).trim() !== "" ||
-                        String(
-                          item?.teacherName ?? ""
-                        ).trim() !== "" ||
-                        String(
-                          item?.number ?? ""
-                        ).trim() !== "" ||
-                        Number(
-                          item?.qty || 0
-                        ) > 0
-                      ) {
-                        filled = true;
+                      if (!Array.isArray(subArray)) {
+                        return;
                       }
-                    });
-                  });
+
+                      subArray.forEach((item) => {
+                        if (
+                          String(
+                            item?.teacherName ?? ""
+                          ).trim() !== "" ||
+                          String(
+                            item?.number ?? ""
+                          ).trim() !== "" ||
+                          Number(
+                            item?.qty || 0
+                          ) > 0
+                        ) {
+                          filled = true;
+                        }
+                      });
+                    }
+                  );
                 }
               );
             }
 
-            // =============================================
+            // =========================================
             // NORMAL SUBJECT
-            // =============================================
+            // =========================================
 
             else {
               data.forEach((item) => {
                 if (
-                  String(
-                    item?.principal ?? ""
-                  ).trim() !== "" ||
                   String(
                     item?.teacherName ?? ""
                   ).trim() !== "" ||
@@ -716,45 +874,72 @@ const handleExport = (type) => {
     };
 
     // =====================================================
-    // EXPORT DATA
+    // EXPORT SCHOOLS
     // =====================================================
 
-    exportSchools.forEach((school, index) => {
-      const schoolHasFilledData =
-        checkSchoolHasData(school);
+    exportSchools.forEach(
+      (school, index) => {
 
-      // =================================================
-      // FILLED EXPORT
-      // =================================================
+        const schoolHasFilledData =
+          checkSchoolHasData(school);
 
-      if (
-        type === "filled" &&
-        !schoolHasFilledData
-      ) {
-        return;
-      }
+        // ===============================================
+        // FILLED EXPORT
+        // ===============================================
 
-      // =================================================
-      // EMPTY EXPORT
-      // =================================================
+        if (
+          type === "filled" &&
+          !schoolHasFilledData
+        ) {
+          return;
+        }
 
-      if (
-        type === "empty" &&
-        schoolHasFilledData
-      ) {
-        return;
-      }
+        // ===============================================
+        // EMPTY EXPORT
+        // ===============================================
 
-      // =================================================
-      // CLASS 11 + CLASS 12
-      // SELECTED YEARS ONLY
-      // =================================================
+        if (
+          type === "empty" &&
+          schoolHasFilledData
+        ) {
+          return;
+        }
 
-      ["Class 11", "Class 12"].forEach(
-        (className) => {
+        // ===============================================
+        // CLASS 11 + CLASS 12
+        // ===============================================
+
+        [
+          "Class 11",
+          "Class 12",
+        ].forEach((className) => {
+
           validExportYears.forEach((year) => {
+
             const classData =
-              school.classes?.[className]?.[year];
+              school.classes?.[
+                className
+              ]?.[year];
+
+            // =========================================
+            // PRINCIPAL
+            // =========================================
+
+            const principal =
+              getClassPrincipal(
+                school,
+                className
+              );
+
+            // =========================================
+            // REMARK
+            // =========================================
+
+            const classRemark =
+              getClassRemark(
+                school,
+                className
+              );
 
             // =========================================
             // BASE ROW
@@ -766,137 +951,133 @@ const handleExport = (type) => {
               school.schoolName || "",
               className,
               year,
-              school.remark || "",
+
+              // PRINCIPAL
+              principal,
+
+              // REMARK
+              classRemark,
             ];
 
             // =========================================
             // SUBJECT DATA
             // =========================================
 
-            exportSubjects.forEach((subject) => {
-              const data =
-                classData?.subjects?.[subject];
+            exportSubjects.forEach(
+              (subject) => {
 
-              // =======================================
-              // GROUP SUBJECT
-              // =======================================
+                const data =
+                  classData?.subjects?.[
+                    subject
+                  ];
 
-              if (
-                data &&
-                !Array.isArray(data)
-              ) {
-                [
-                  "English Medium",
-                  "Hindi Medium",
-                ].forEach((medium) => {
-                  const subSubjects =
-                    exportSubjectGroups[subject] || [];
+                // =======================================
+                // GROUP SUBJECT
+                // =======================================
 
-                  subSubjects.forEach((sub) => {
-                    const teachers =
-                      data?.[medium]?.[sub] || [];
+                if (
+                  data &&
+                  !Array.isArray(data)
+                ) {
 
-                    // =================================
-                    // GET ALL VALUES VERTICALLY
-                    // =================================
+                  [
+                    "English Medium",
+                    "Hindi Medium",
+                  ].forEach((medium) => {
 
-                    const principals =
-                      getVerticalValues(
-                        teachers,
-                        "principal"
+                    const subSubjects =
+                      exportSubjectGroups[
+                        subject
+                      ] || [];
+
+                    subSubjects.forEach((sub) => {
+
+                      const teachers =
+                        data?.[
+                          medium
+                        ]?.[
+                          sub
+                        ] || [];
+
+                      // =================================
+                      // NAME
+                      // =================================
+
+                      const names =
+                        getVerticalValues(
+                          teachers,
+                          "teacherName"
+                        );
+
+                      // =================================
+                      // NUMBER
+                      // =================================
+
+                      const numbers =
+                        getVerticalValues(
+                          teachers,
+                          "number"
+                        );
+
+                      // =================================
+                      // ADD DATA
+                      // =================================
+
+                      row.push(
+                        names,
+                        numbers
                       );
-
-                    const names =
-                      getVerticalValues(
-                        teachers,
-                        "teacherName"
-                      );
-
-                    const numbers =
-                      getVerticalValues(
-                        teachers,
-                        "number"
-                      );
-
-                    // =================================
-                    // IMPORTANT
-                    // ONE CELL EACH
-                    //
-                    // Principal cell:
-                    // Ram
-                    // Shyam
-                    //
-                    // Name cell:
-                    // Amit
-                    // Rahul
-                    //
-                    // Number cell:
-                    // 9876543210
-                    // 8765432109
-                    // =================================
-
-                    row.push(
-                      principals,
-                      names,
-                      numbers
-                    );
+                    });
                   });
-                });
+                }
+
+                // =======================================
+                // NORMAL SUBJECT
+                // =======================================
+
+                else {
+
+                  const teachers =
+                    Array.isArray(data)
+                      ? data
+                      : [];
+
+                  const names =
+                    getVerticalValues(
+                      teachers,
+                      "teacherName"
+                    );
+
+                  const numbers =
+                    getVerticalValues(
+                      teachers,
+                      "number"
+                    );
+
+                  row.push(
+                    names,
+                    numbers
+                  );
+                }
               }
-
-              // =======================================
-              // NORMAL SUBJECT
-              // =======================================
-
-              else {
-                const teachers =
-                  Array.isArray(data)
-                    ? data
-                    : [];
-
-                const principals =
-                  getVerticalValues(
-                    teachers,
-                    "principal"
-                  );
-
-                const names =
-                  getVerticalValues(
-                    teachers,
-                    "teacherName"
-                  );
-
-                const numbers =
-                  getVerticalValues(
-                    teachers,
-                    "number"
-                  );
-
-                // =================================
-                // ONE CELL EACH
-                // =================================
-
-                row.push(
-                  principals,
-                  names,
-                  numbers
-                );
-              }
-            });
+            );
 
             // =========================================
-            // EMPTY REMARK
+            // EMPTY EXPORT
             // =========================================
 
             if (
               type === "empty" &&
-              !schoolHasFilledData &&
-              !String(
-                school.remark || ""
-              ).trim()
+              !schoolHasFilledData
             ) {
-              row[5] =
-                "Pending Book Entry";
+              if (
+                !String(
+                  classRemark || ""
+                ).trim()
+              ) {
+                row[6] =
+                  "Pending Book Entry";
+              }
             }
 
             // =========================================
@@ -905,9 +1086,9 @@ const handleExport = (type) => {
 
             rows.push(row);
           });
-        }
-      );
-    });
+        });
+      }
+    );
 
     // =====================================================
     // NO DATA
@@ -941,10 +1122,11 @@ const handleExport = (type) => {
     sheet["!merges"] = merges;
 
     // =====================================================
-    // COLUMN WIDTH
+    // COLUMN WIDTHS
     // =====================================================
 
-    const totalColumns = colIndex;
+    const totalColumns =
+      colIndex;
 
     sheet["!cols"] =
       Array.from(
@@ -952,37 +1134,73 @@ const handleExport = (type) => {
           length: totalColumns,
         },
         (_, index) => {
-          if (index === 0)
-            return { wch: 8 };
 
-          if (index === 1)
-            return { wch: 15 };
+          // S.No
+          if (index === 0) {
+            return {
+              wch: 8,
+            };
+          }
 
-          if (index === 2)
-            return { wch: 35 };
+          // Code
+          if (index === 1) {
+            return {
+              wch: 15,
+            };
+          }
 
-          if (index === 3)
-            return { wch: 12 };
+          // School Name
+          if (index === 2) {
+            return {
+              wch: 35,
+            };
+          }
 
-          if (index === 4)
-            return { wch: 10 };
+          // Class
+          if (index === 3) {
+            return {
+              wch: 12,
+            };
+          }
 
-          if (index === 5)
-            return { wch: 30 };
+          // Year
+          if (index === 4) {
+            return {
+              wch: 10,
+            };
+          }
 
-          // Principal / Name / Number
-          return { wch: 22 };
+          // Principal
+          if (index === 5) {
+            return {
+              wch: 25,
+            };
+          }
+
+          // Remarks
+          if (index === 6) {
+            return {
+              wch: 30,
+            };
+          }
+
+          // Name / Number
+          return {
+            wch: 22,
+          };
         }
       );
 
     // =====================================================
-    // WRAP TEXT
-    // VERY IMPORTANT FOR \n
+    // CELL ALIGNMENT
     // =====================================================
 
     Object.keys(sheet).forEach(
       (cellAddress) => {
-        if (cellAddress.startsWith("!")) {
+
+        if (
+          cellAddress.startsWith("!")
+        ) {
           return;
         }
 
@@ -1007,41 +1225,50 @@ const handleExport = (type) => {
     // ROW HEIGHT
     // =====================================================
 
-    // Increase data-row height so multiple names
-    // are visible vertically in Excel.
+    sheet["!rows"] =
+      rows.map(
+        (row, rowIndex) => {
 
-    sheet["!rows"] = rows.map(
-      (row, rowIndex) => {
-        if (rowIndex < 4) {
+          // Header rows
+          if (rowIndex < 4) {
+            return {
+              hpt: 25,
+            };
+          }
+
+          let maxLines = 1;
+
+          row.forEach(
+            (value) => {
+
+              if (
+                typeof value === "string"
+              ) {
+
+                const lineCount =
+                  value.split("\n").length;
+
+                if (
+                  lineCount > maxLines
+                ) {
+                  maxLines =
+                    lineCount;
+                }
+              }
+            }
+          );
+
           return {
-            hpt: 25,
+            hpt: Math.max(
+              20,
+              maxLines * 18
+            ),
           };
         }
-
-        let maxLines = 1;
-
-        row.forEach((value) => {
-          if (typeof value === "string") {
-            const lineCount =
-              value.split("\n").length;
-
-            if (lineCount > maxLines) {
-              maxLines = lineCount;
-            }
-          }
-        });
-
-        return {
-          hpt: Math.max(
-            20,
-            maxLines * 18
-          ),
-        };
-      }
-    );
+      );
 
     // =====================================================
-    // WORKBOOK
+    // CREATE WORKBOOK
     // =====================================================
 
     const wb =
@@ -1066,7 +1293,7 @@ const handleExport = (type) => {
         : `School_Empty_Records_${yearText}.xlsx`;
 
     // =====================================================
-    // DOWNLOAD
+    // EXPORT FILE
     // =====================================================
 
     XLSX.writeFile(
@@ -1089,6 +1316,7 @@ const handleExport = (type) => {
     );
 
   } catch (error) {
+
     console.error(
       "Export failed:",
       error
@@ -1734,10 +1962,7 @@ const addSubSubject = () => {
 
             </h1>
 
-
-
-
-            <p className="mt-4 max-w-xl text-lg text-slate-300">
+<p className="mt-4 max-w-xl text-lg text-slate-300">
 
               Manage schools, teachers, subjects, phone numbers and book
               quantities from one smart dashboard.
@@ -1748,14 +1973,7 @@ const addSubSubject = () => {
 
           </div>
 
-
-
-
-
-          {/* RIGHT BUTTONS */}
-
-
-          <div className="flex flex-wrap gap-4">
+<div className="flex flex-wrap gap-4">
 
 
 
@@ -1766,11 +1984,6 @@ const addSubSubject = () => {
   subjects={subjects}
 />
 
-
-
-
-
-        
 <button
   className="
     group
@@ -1844,27 +2057,17 @@ Export Empty
     return;
   }
 
-  // ==========================================
-  // SCHOOL CODE - OPTIONAL
-  // ==========================================
 
   const code = prompt("Enter School Code (Optional)");
 
-  // Agar user Cancel kare ya blank chhode
-  // to code empty rahega
   const trimmedCode = code?.trim() || "";
-
-  // ==========================================
-  // CREATE NEW SCHOOL
-  // ==========================================
 
   const newSchool = {
     id: Date.now(),
 
-    // Code optional hai
     code: trimmedCode,
 
-    // Name required hai
+    
     schoolName: trimmedSchoolName,
 
     remark: "",
@@ -1886,9 +2089,7 @@ Export Empty
     },
   };
 
-  // ==========================================
-  // ADD SCHOOL
-  // ==========================================
+  
 
   setSchools((prev) => [
     ...prev,
@@ -1903,24 +2104,12 @@ Export Empty
           </div>
 
 
+</div>
 
-        </div>
-
-
-
-
-
-        {/* Bottom Line */}
-
-        <div className="absolute bottom-0 left-0 h-[2px] w-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60"></div>
+<div className="absolute bottom-0 left-0 h-[2px] w-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60"></div>
 
 
       </div>
-
-
-
-
-
 
 <div className="flex items-center gap-3">
 
@@ -2031,10 +2220,7 @@ Export Empty
   handleDeleteSubSubject={handleDeleteSubSubject}
 />
 
-
-
-
-    </div>
+</div>
 
   );
 

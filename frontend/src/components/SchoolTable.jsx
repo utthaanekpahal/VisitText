@@ -21,11 +21,13 @@ export default function SchoolTable({
  
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
-const [qtyRange, setQtyRange] = useState("");
+
 const [selectedSubject, setSelectedSubject] = useState("All");
 const [selectedYears, setSelectedYears] = useState(
   years.length > 0 ? [years[0]] : []
 );
+const [selectedMedium, setSelectedMedium] = useState("All");
+const [selectedClass, setSelectedClass] = useState("All");
 
 useEffect(() => {
   if (years.length > 0) {
@@ -34,6 +36,12 @@ useEffect(() => {
     setSelectedYears([]);
   }
 }, [years]);
+const allClasses = ["Class 11", "Class 12"];
+
+const visibleClasses =
+  selectedClass === "All"
+    ? allClasses
+    : [selectedClass];
 
 const handleYearChange = (year) => {
   setSelectedYears((prev) => {
@@ -62,9 +70,18 @@ const visibleYears = years.filter((year) =>
 const getVisibleMediums = (subject) => {
   const deleted = deletedMediums?.[subject] || [];
 
-  return mediums.filter(
+  let visible = mediums.filter(
     (medium) => !deleted.includes(medium)
   );
+
+  // Medium filter
+  if (selectedMedium !== "All") {
+    visible = visible.filter(
+      (medium) => medium === selectedMedium
+    );
+  }
+
+  return visible;
 };
 
 const getVisibleSubSubjects = (subject, medium) => {
@@ -106,8 +123,6 @@ const handleEditSubject = (oldSubject, newSubject) => {
 };
 
 
-// ================= EDIT MEDIUM =================
-
 
 
 // ================= EDIT SUB SUBJECT =================
@@ -146,8 +161,7 @@ const handleEditSubSubject = (
 
   const rowsPerPage = 5;
 
-
- // Search + Quantity Filter
+// ================= SEARCH FILTER =================
 const filteredSchools = schools.filter((school) => {
   const searchText = search.trim().toLowerCase();
 
@@ -159,98 +173,7 @@ const filteredSchools = schools.filter((school) => {
     .toLowerCase()
     .includes(searchText);
 
-  if (!qtyRange) return nameMatch || codeMatch;
-
-  let min = 1;
-  let max = Infinity;
-
-  switch (qtyRange) {
-    case "1-10":
-      min = 1;
-      max = 10;
-      break;
-    case "11-20":
-      min = 11;
-      max = 20;
-      break;
-    case "21-30":
-      min = 21;
-      max = 30;
-      break;
-    case "31-40":
-      min = 31;
-      max = 40;
-      break;
-    case "41-50":
-      min = 41;
-      max = 50;
-      break;
-    case "51-60":
-      min = 51;
-      max = 60;
-      break;
-    case "61-70":
-      min = 61;
-      max = 70;
-      break;
-    case "71-80":
-      min = 71;
-      max = 80;
-      break;
-    case "81-90":
-      min = 81;
-      max = 90;
-      break;
-    case "91-100":
-      min = 91;
-      max = 100;
-      break;
-    case "101+":
-      min = 101;
-      max = Infinity;
-      break;
-  }
-
-
-const qtyMatch = ["Class 11", "Class 12"].some((className) =>
-  visibleYears.some((year) =>
-
-    subjects.some((subject) => {
-
-      // Science / Commerce / Arts / Agriculture
-      if (subjectGroups[subject]) {
-
-        return mediums.some((medium) =>
-          subjectGroups[subject].some((subSubject) => {
-
-            const teachers =
-              school.classes?.[className]?.[year]?.subjects?.[subject]?.[medium]?.[subSubject] || [];
-
-            return teachers.some((teacher) => {
-              const qty = Number(teacher.qty || 0);
-              return qty >= min && qty <= max;
-            });
-
-          })
-        );
-
-      }
-
-      // Normal Subject
-      const teachers =
-        school.classes?.[className]?.[year]?.subjects?.[subject] || [];
-
-      return teachers.some((teacher) => {
-        const qty = Number(teacher.qty || 0);
-        return qty >= min && qty <= max;
-      });
-
-    })
-
-  )
-);
-
-  return (nameMatch || codeMatch) && qtyMatch;
+  return nameMatch || codeMatch;
 });
   // Pagination
   const totalPages = Math.max(
@@ -318,6 +241,34 @@ const qtyMatch = ["Class 11", "Class 12"].some((className) =>
       {subject}
     </option>
   ))}
+</select>
+<select
+  value={selectedMedium}
+  onChange={(e) => {
+    setSelectedMedium(e.target.value);
+    setCurrentPage(1);
+  }}
+  className="rounded-lg border border-gray-300 px-4 py-2"
+>
+  <option value="All">All Mediums</option>
+
+  {mediums.map((medium) => (
+    <option key={medium} value={medium}>
+      {medium}
+    </option>
+  ))}
+</select>
+<select
+  value={selectedClass}
+  onChange={(e) => {
+    setSelectedClass(e.target.value);
+    setCurrentPage(1);
+  }}
+  className="rounded-lg border border-gray-300 px-4 py-2"
+>
+  <option value="All">All Classes</option>
+  <option value="Class 11">Class 11</option>
+  <option value="Class 12">Class 12</option>
 </select>
 <div className="relative">
   <details className="relative z-[100]">
@@ -414,15 +365,15 @@ const qtyMatch = ["Class 11", "Class 12"].some((className) =>
   {/* Row 1 */}
  <tr className="bg-[#ece5d8]">
 
-  {/* ================= S.NO ================= */}
   <th
     rowSpan={4}
     className="
       sticky left-0 top-0 z-[100]
-      min-w-[70px]
-      border border-gray-400
-      bg-[#ece5d8]
+      min-w-[30px]
+      border border-black 
+      bg-white
       text-center
+      text-xl
     "
   >
     S.No.
@@ -435,9 +386,10 @@ const qtyMatch = ["Class 11", "Class 12"].some((className) =>
     className="
       sticky left-[70px] top-0 z-[100]
       min-w-[140px]
-      border border-gray-400
-      bg-[#ece5d8]
+      border border-black
+      bg-white
       text-center
+      text-xl
     "
   >
     Code
@@ -450,9 +402,10 @@ const qtyMatch = ["Class 11", "Class 12"].some((className) =>
     className="
       sticky left-[140px] top-0 z-[100]
       min-w-[250px]
-      border border-gray-400
-      bg-[#ece5d8]
+      border border-black
+      bg-white
       text-center
+      text-xl
     "
   >
     School Name
@@ -460,18 +413,32 @@ const qtyMatch = ["Class 11", "Class 12"].some((className) =>
 
 <th 
 rowSpan={4}
-className="min-w-[130px]"
+className="min-w-[140px]
+ border border-black
+      bg-white
+      text-center
+      text-xl
+"
 >
 Class
 </th>
 
 <th 
 rowSpan={4}
-className="min-w-[120px]"
+className="min-w-[120px]  border border-black
+      bg-white
+      text-center
+      text-xl"
 >
 Year
 </th>
 
+<th
+  rowSpan={4}
+  className="min-w-[180px] border border-black bg-white text-center text-xl"
+>
+  Principal
+</th>
 
     {(selectedSubject === "All"
   ? subjects
@@ -484,10 +451,10 @@ const totalColumns = subjectGroups[subject]
   ? visibleMediums.reduce(
       (total, medium) =>
         total +
-        getVisibleSubSubjects(subject, medium).length * 3,
+        getVisibleSubSubjects(subject, medium).length * 2,
       0
     )
-  : 3;
+  : 2;
   return (
   <th
   key={subject}
@@ -558,9 +525,17 @@ const totalColumns = subjectGroups[subject]
             <th
               key={medium}
               colSpan={
-  getVisibleSubSubjects(subject, medium).length * 3
-}
-              className="border border-gray-400 text-center"
+  getVisibleSubSubjects(subject, medium).length * 2
+}className={`
+  border border-gray-400 text-center font-bold
+  ${
+    medium === "English Medium"
+      ? "bg-blue-500 text-white font-bold text-xl"
+      : medium === "Hindi Medium"
+      ? "bg-green-500 text-white font-bold text-xl"
+      : "bg-gray-100"
+  }
+`}
             >
               <div className="flex items-center justify-center gap-2">
                 <span>{medium}</span>
@@ -584,14 +559,14 @@ const totalColumns = subjectGroups[subject]
     return null;
   })}
 
-  {/* ================= REMARK ================= */}
+ 
 
-  <th
-    rowSpan={3}
-    className="border border-gray-400 min-w-[180px]"
-  >
-    Remark
-  </th>
+<th
+  rowSpan={4}
+  className="border border-black min-w-[220px] "
+>
+  Remark
+</th>
 
 </tr>
 
@@ -607,11 +582,11 @@ const totalColumns = subjectGroups[subject]
 
 return getVisibleMediums(subject).flatMap((medium) =>
   getVisibleSubSubjects(subject, medium).map((sub) => (
-   <th
+ <th
   key={medium + sub}
-  colSpan={3}
-  className="border border-gray-400 min-w-[350px]"
->
+  colSpan={2}
+  className="border border-black min-w-[350px] "
+>  
   <div className="flex items-center justify-center gap-2">
     <input
   type="text"
@@ -674,23 +649,18 @@ if (subjectGroups[subject]) {
 
     return getVisibleSubSubjects(subject, medium).flatMap((sub) => [
 
-      <th
-        key={`${subject}-${medium}-${sub}-principal`}
-        className="border border-gray-400 text-center"
-      >
-        Principal
-      </th>,
+     
 
       <th
         key={`${subject}-${medium}-${sub}-name`}
-        className="border border-gray-400 text-center"
+        className="border border-black text-center"
       >
         Name
       </th>,
 
       <th
         key={`${subject}-${medium}-${sub}-number`}
-        className="border border-gray-400 text-center"
+        className="border border-black  text-center"
       >
         Number
       </th>
@@ -720,14 +690,14 @@ return null;
       const originalIndex = schools.indexOf(school);
 
   
+const schoolRowCounts = [];   
 
-     const schoolRowCounts = [];
-
-["Class 11", "Class 12"].forEach((className) => {
+visibleClasses.forEach((className) => {
+  
 
   visibleYears.forEach((year) => {
 
-          const maxRowsForYear = Math.max(
+    const maxRowsForYear = Math.max(
             1,
 
             ...subjects.map((subject) => {
@@ -738,9 +708,9 @@ return null;
 
                 let max = 1;
 
-                mediums.forEach((medium) => {
+                getVisibleMediums(subject).forEach((medium) => {
 
-                  subjectGroups[subject].forEach((sub) => {
+  subjectGroups[subject].forEach((sub) => {
 
                     const len =
                       school.classes?.[className]?.[year]
@@ -793,10 +763,9 @@ return null;
 
         <React.Fragment key={originalIndex}>
 
-       {["Class 11", "Class 12"].map((className) => (
+     {visibleClasses.map((className) => (
 
   visibleYears.map((year) => {
-
               // =================================================
               // MAX ROWS FOR CURRENT YEAR
               // =================================================
@@ -810,11 +779,11 @@ return null;
 
                   if (subjectGroups[subject]) {
 
-                    let max = 1;
+  let max = 1;
 
-                    mediums.forEach((medium) => {
+  getVisibleMediums(subject).forEach((medium) => {
 
-                      subjectGroups[subject].forEach((sub) => {
+    subjectGroups[subject].forEach((sub) => {
 
                         const len =
                           school.classes?.[className]?.[year]
@@ -858,10 +827,11 @@ return null;
                 // LAST ROW OF COMPLETE SCHOOL
                 // =================================================
 
-  const lastYear = visibleYears[visibleYears.length - 1];
+ const lastYear = visibleYears[visibleYears.length - 1];
+const lastClass = visibleClasses[visibleClasses.length - 1];
 
 const isLastSchoolRow =
-  className === "Class 12" &&
+  className === lastClass &&
   year === lastYear &&
   teacherRow === maxRows - 1;
 
@@ -880,36 +850,28 @@ const isLastSchoolRow =
                     `}
                   >
 
-                    {/* =================================================
-                        S.NO + CODE + SCHOOL NAME
-                    ================================================= */}
+                   
 
      {teacherRow === 0 &&
-  className === "Class 11" &&
+  className === visibleClasses[0] &&
   year === visibleYears[0] && (
 
                       <>
 
-                        {/* S.NO */}
-
-                       {/* =================================================
-    S.NO + CODE + SCHOOL NAME
-================================================= */}
+                  
 
 {teacherRow === 0 &&
-  className === "Class 11" &&
+  className === visibleClasses[0] &&
   year === visibleYears[0] && (
     <>
-      {/* ================= S.NO ================= */}
-
-   {/* ================= S.NO ================= */}
+   
 
 <td
   rowSpan={totalSchoolRows}
   className="
     sticky left-0 z-[40]
     bg-white
-    border border-gray-300
+    border border-bl
     p-3
     text-center
     align-top
@@ -921,14 +883,14 @@ const isLastSchoolRow =
 </td>
 
 
-{/* ================= CODE ================= */}
+
 
 <td
   rowSpan={totalSchoolRows}
   className="
     sticky left-[70px] z-[40]
     bg-white
-    border border-gray-300
+    border border-black
     p-3
     text-center
     align-top
@@ -947,7 +909,7 @@ const isLastSchoolRow =
   className="
     sticky left-[140px] z-[40]
     bg-white
-    border border-gray-300
+    border border-black
     px-6 py-5
     min-w-[250px]
     w-[250px]
@@ -990,7 +952,7 @@ const isLastSchoolRow =
                       <td
                         rowSpan={maxRows}
                         className="
-                          border border-gray-300
+                          border border-black
                           px-8 py-5
                           text-center
                           min-w-[130px]
@@ -1002,16 +964,12 @@ const isLastSchoolRow =
                     )}
 
 
-                    {/* =================================================
-                        YEAR
-                    ================================================= */}
-
                     {teacherRow === 0 && (
 
                       <td
                         rowSpan={maxRows}
                         className="
-                          border border-gray-300
+                          border border-black
                           px-8 py-5
                           text-center
                           min-w-[120px]
@@ -1021,6 +979,50 @@ const isLastSchoolRow =
                       </td>
 
                     )}
+                    {teacherRow === 0 && (
+  <td className="border p-1 text-center min-w-[180px]">
+    <textarea
+      value={school.principal?.[className] || ""}
+      onChange={(e) => {
+        setSchools((prev) =>
+          prev.map((s, i) =>
+            i === originalIndex
+              ? {
+                  ...s,
+                  principal: {
+                    ...(s.principal || {}),
+                    [className]: e.target.value,
+                  },
+                }
+              : s
+          )
+        );
+      }}
+      rows={1}
+      className="
+        w-full
+        min-h-[35px]
+        h-auto
+        px-2 py-1
+        bg-transparent
+        border-0
+        outline-none
+        text-center
+        text-base
+        font-bold
+        resize-none
+        overflow-hidden
+        whitespace-pre-wrap
+        break-words
+      "
+      onInput={(e) => {
+        e.currentTarget.style.height = "auto";
+        e.currentTarget.style.height =
+          `${e.currentTarget.scrollHeight}px`;
+      }}
+    />
+  </td>
+)}
 
 
                     {/* =================================================
@@ -1032,14 +1034,7 @@ const isLastSchoolRow =
                       : [selectedSubject]
                     ).map((subject) => {
 
-                      // =================================================
-                      // GROUP SUBJECT
-                      // =================================================
-
-                  // =================================================
-// GROUP SUBJECT
-// =================================================
-
+                     
 if (subjectGroups[subject]) {
 
   return getVisibleMediums(subject).flatMap((medium) =>
@@ -1062,50 +1057,9 @@ if (subjectGroups[subject]) {
 
           {/* ================= PRINCIPAL ================= */}
 
-          <td className="border p-1 text-center min-w-[220px]">
-
-           <textarea
-  value={teacher.principal || ""}
-  onChange={(e) =>
-    handleInputChange(
-      originalIndex,
-      className,
-      year,
-      subject,
-      medium,
-      sub,
-      teacherRow,
-      "principal",
-      e.target.value
-    )
-  }
-  rows={1}
-  className="
-    w-full
-    min-h-[35px]
-    px-2 py-1
-    bg-transparent
-    border-0
-    outline-none
-    text-center
-    text-base
-    font-bold
-    resize-none
-    overflow-hidden
-    whitespace-pre-wrap
-    break-words
-  "
-  onInput={(e) => {
-    e.currentTarget.style.height = "auto";
-    e.currentTarget.style.height =
-      `${e.currentTarget.scrollHeight}px`;
-  }}
-/>
-
-          </td>
+        
 
 
-          {/* ================= NAME ================= */}
 
           <td className="border p-1 text-center min-w-[220px]">
 
@@ -1200,10 +1154,6 @@ if (subjectGroups[subject]) {
 }
 
 
-                      // =================================================
-                      // NORMAL SUBJECT
-                      // =================================================
-
                       const teachers =
                         school.classes?.[className]?.[year]
                           ?.subjects?.[subject] || [];
@@ -1220,46 +1170,7 @@ if (subjectGroups[subject]) {
 
 
 {/* ================= PRINCIPAL ================= */}
-<td className="border p-1 text-center min-w-[180px]">
-  <textarea
-    value={teacher.principal || ""}
-    onChange={(e) =>
-      handleInputChange(
-        originalIndex,
-        className,
-        year,
-        subject,
-        medium,
-        sub,
-        teacherRow,
-        "principal",
-        e.target.value
-      )
-    }
-    rows={1}
-    className="
-      w-full
-      min-h-[35px]
-      h-auto
-      px-2 py-1
-      bg-transparent
-      border-0
-      outline-none
-      text-center
-      text-base
-      font-bold
-      resize-none
-      overflow-hidden
-      whitespace-pre-wrap
-      break-words
-    "
-    onInput={(e) => {
-      e.currentTarget.style.height = "auto";
-      e.currentTarget.style.height =
-        `${e.currentTarget.scrollHeight}px`;
-    }}
-  />
-</td>
+
 
 
 {/* ================= NAME ================= */}
@@ -1356,51 +1267,51 @@ if (subjectGroups[subject]) {
 
 
 
-             {teacherRow === 0 &&
-  className === "Class 11" &&
-  year === visibleYears[0] && (
+           {/* ================= REMARK ================= */}
 
-                      <td
-                        rowSpan={totalSchoolRows}
-                        className="
-                          border-l border-r border-gray-300
-                          px-3
-                          align-top
-                          bg-white
-                        "
-                      >
+{teacherRow === 0 && (
 
-                        <input
-                          type="text"
-                          value={school.remark || ""}
-                          onChange={(e) => {
+  <td
+    className="
+      border
+      border-gray-300
+      px-3
+      align-top
+      bg-white
+      min-w-[220px]
+    "
+  >
+    <input
+      type="text"
+      value={school.remark?.[className] || ""}
+      onChange={(e) => {
+        setSchools((prev) =>
+          prev.map((s, i) =>
+            i === originalIndex
+              ? {
+                  ...s,
+                  remark: {
+                    ...(s.remark || {}),
+                    [className]: e.target.value,
+                  },
+                }
+              : s
+          )
+        );
+      }}
+      placeholder={`${className} Remark...`}
+      className="
+        w-full
+        bg-transparent
+        border-0
+        outline-none
+        text-sm
+        py-2
+      "
+    />
+  </td>
 
-                            setSchools((prev) =>
-                              prev.map((s, i) =>
-                                i === originalIndex
-                                  ? {
-                                      ...s,
-                                      remark: e.target.value,
-                                    }
-                                  : s
-                              )
-                            );
-
-                          }}
-                          placeholder="Type remark..."
-                          className="
-                            w-full
-                            bg-transparent
-                            border-0
-                            outline-none
-                            text-sm
-                            py-2
-                          "
-                        />
-
-                      </td>
-
-                    )}
+)}
 
                   </tr>
 
