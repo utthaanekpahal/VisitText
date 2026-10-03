@@ -14,12 +14,64 @@ export default function SchoolRecords() {
 const [selectedSchool, setSelectedSchool] = useState(null);
 const [selectedSubject, setSelectedSubject] = useState("");
 
+const [selectedType, setSelectedType] = useState("Textbook");
 const [selectedClass, setSelectedClass] = useState("Class 11");
 const [selectedYear, setSelectedYear] = useState("2026");
 const [selectedExportYears, setSelectedExportYears] = useState([]);
-const [deletedMediums, setDeletedMediums] = useState({});
 
-const [deletedSubSubjects, setDeletedSubSubjects] = useState({});
+
+// ======================================================
+// DELETED MEDIUMS
+// ======================================================
+
+const [deletedMediums, setDeletedMediums] = useState(() => {
+  try {
+    const saved = localStorage.getItem("deletedMediums");
+
+    return saved
+      ? JSON.parse(saved)
+      : {};
+  } catch {
+    return {};
+  }
+});
+
+useEffect(() => {
+  localStorage.setItem(
+    "deletedMediums",
+    JSON.stringify(deletedMediums)
+  );
+}, [deletedMediums]);
+
+
+// ======================================================
+// DELETED SUB SUBJECTS
+// ======================================================
+
+const [deletedSubSubjects, setDeletedSubSubjects] = useState(() => {
+  try {
+    const saved = localStorage.getItem("deletedSubSubjects");
+
+    return saved
+      ? JSON.parse(saved)
+      : {};
+  } catch {
+    return {};
+  }
+});
+
+useEffect(() => {
+  localStorage.setItem(
+    "deletedSubSubjects",
+    JSON.stringify(deletedSubSubjects)
+  );
+}, [deletedSubSubjects]);
+
+
+// ======================================================
+// YEARS
+// ======================================================
+
 const [years, setYears] = useState(() => {
   try {
     const saved = localStorage.getItem("schoolYears");
@@ -33,29 +85,51 @@ const [years, setYears] = useState(() => {
 });
 
 useEffect(() => {
-  localStorage.setItem("schoolYears", JSON.stringify(years));
+  localStorage.setItem(
+    "schoolYears",
+    JSON.stringify(years)
+  );
 }, [years]);
+
+
+// ======================================================
+// SCHOOLS
+// ======================================================
 
 const [schools, setSchools] = useState(() => {
   try {
-    const savedSchools = localStorage.getItem("schoolRecords");
+    const savedSchools =
+      localStorage.getItem("schoolRecords");
 
     return savedSchools
       ? JSON.parse(savedSchools)
       : [];
   } catch (error) {
-    console.error("Failed to load schools:", error);
+    console.error(
+      "Failed to load schools:",
+      error
+    );
+
     return [];
   }
 });
 
 useEffect(() => {
-  localStorage.setItem("schoolRecords", JSON.stringify(schools));
+  localStorage.setItem(
+    "schoolRecords",
+    JSON.stringify(schools)
+  );
 }, [schools]);
+
+
+// ======================================================
+// SUBJECTS
+// ======================================================
 
 const [subjects, setSubjects] = useState(() => {
   try {
-    const saved = localStorage.getItem("schoolSubjects");
+    const saved =
+      localStorage.getItem("schoolSubjects");
 
     return saved
       ? JSON.parse(saved)
@@ -77,46 +151,105 @@ const [subjects, setSubjects] = useState(() => {
   }
 });
 
+
+// SAVE SUBJECTS
 useEffect(() => {
-  localStorage.setItem("schoolSubjects", JSON.stringify(subjects));
+  localStorage.setItem(
+    "schoolSubjects",
+    JSON.stringify(subjects)
+  );
 }, [subjects]);
+
+
+// ======================================================
+// SUBJECT GROUPS
+// ======================================================
 
 const [subjectGroups, setSubjectGroups] = useState(() => {
   try {
-    const saved = localStorage.getItem("schoolSubjectGroups");
+    const saved =
+      localStorage.getItem("schoolSubjectGroups");
 
     return saved
       ? JSON.parse(saved)
       : {
-          Science: [
-            "Chemistry",
-            "Physics",
-            "Botany",
-            "Mathematics",
-          ],
-          Commerce: [
-            "Accounts",
-            "Business Studies",
-            "Economics",
-            "Bookkeeping",
-          ],
-          Arts: [
-            "Political Science",
-            "Geography",
-            "History",
-            "Economics",
-            "Sociology",
-          ],
-          Agriculture: [
-            "Horticulture",
-            "Animal Husbandry",
-            "Crop Production",
-          ],
-          Bharti: [
-            "Hindi",
-            "English",
-            "Sanskrit",
-          ],
+          Science: {
+            "English Medium": [
+              "Chemistry",
+              "Physics",
+              "Biology",
+              "Mathematics",
+            ],
+
+            "Hindi Medium": [
+              "Rasayan",
+              "Bhautik",
+              "Jeev Vigyan",
+              "Ganit",
+            ],
+          },
+
+          Commerce: {
+            "English Medium": [
+              "Accounts",
+              "Business Studies",
+              "Economics",
+              "Bookkeeping",
+            ],
+
+            "Hindi Medium": [
+              "Lekhashastra",
+              "Vyavsay Adhyayan",
+              "Arthashastra",
+              "Bahi Khata",
+            ],
+          },
+
+          Arts: {
+            "English Medium": [
+              "Political Science",
+              "Geography",
+              "History",
+              "Economics",
+              "Sociology",
+            ],
+
+            "Hindi Medium": [
+              "Rajneeti Vigyan",
+              "Bhugol",
+              "Itihas",
+              "Arthashastra",
+              "Samajshastra",
+            ],
+          },
+
+          Agriculture: {
+            "English Medium": [
+              "Horticulture",
+              "Animal Husbandry",
+              "Crop Production",
+            ],
+
+            "Hindi Medium": [
+              "Udyaniki",
+              "Pashupalan",
+              "Fasal Utpadan",
+            ],
+          },
+
+          Bharti: {
+            "English Medium": [
+              "Hindi",
+              "English",
+              "Sanskrit",
+            ],
+
+            "Hindi Medium": [
+              "Hindi",
+              "Angrezi",
+              "Sanskrit",
+            ],
+          },
         };
   } catch {
     return {};
@@ -124,54 +257,104 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
 });
 
 
+// SAVE SUBJECT GROUPS
 useEffect(() => {
+  console.log(
+    "SAVING SUBJECT GROUPS:",
+    subjectGroups
+  );
+
   localStorage.setItem(
     "schoolSubjectGroups",
     JSON.stringify(subjectGroups)
   );
 }, [subjectGroups]);
 
-const [mediums, setMediums] = useState([
-  "English Medium",
-  "Hindi Medium",
-]);
 
+// ======================================================
+// MEDIUMS
+// ======================================================
+
+const [mediums, setMediums] = useState(() => {
+  try {
+    const saved =
+      localStorage.getItem("schoolMediums");
+
+    return saved
+      ? JSON.parse(saved)
+      : [
+          "English Medium",
+          "Hindi Medium",
+        ];
+  } catch {
+    return [
+      "English Medium",
+      "Hindi Medium",
+    ];
+  }
+});
+
+
+// SAVE MEDIUMS
+useEffect(() => {
+  localStorage.setItem(
+    "schoolMediums",
+    JSON.stringify(mediums)
+  );
+}, [mediums]);
+
+
+// ======================================================
+// BOOK TYPES
+// ======================================================
+
+const BOOK_TYPES = [
+  "Textbook",
+  "Parikshabodh",
+  "Practical",
+  "Project",
+];
+
+
+// ======================================================
+// CREATE SUBJECT DATA
+// ======================================================
 
 const createSubjectData = () => {
   const data = {};
 
-  const subjectGroups = {
-    Science: ["Chemistry", "Physics", "Botany", "Biology"],
-    Commerce: ["Commerce", "Accounts", "BSt", "Economics"],
-    Arts: ["Arts", "Geography", "History", "Civis"],
-    Agriculture: [
-      "Agriculture1",
-      "Agriculture2",
-      "Agriculture3",
-      "Agriculture4",
-    ],
-    Bharti: [
-      "Bharti1",
-      "Bharti2",
-      "Bharti3",
-      "Bharti4",
-    ],
-  };
-
-  const mediums = ["English Medium", "Hindi Medium"];
-
   subjects.forEach((subject) => {
+
+    // ==============================================
+    // GROUP SUBJECT
+    // ==============================================
+
     if (subjectGroups[subject]) {
+
       data[subject] = {};
 
-      mediums.forEach((medium) => {
+      Object.keys(
+        subjectGroups[subject]
+      ).forEach((medium) => {
+
         data[subject][medium] = {};
 
-        subjectGroups[subject].forEach((sub) => {
-          data[subject][medium][sub] = [];
-        });
+        subjectGroups[subject][medium].forEach(
+          (subSubject) => {
+
+            data[subject][medium][subSubject] = [];
+          }
+        );
       });
-    } else {
+
+    }
+
+    // ==============================================
+    // NORMAL SUBJECT
+    // ==============================================
+
+    else {
+
       data[subject] = [];
     }
   });
@@ -181,7 +364,21 @@ const createSubjectData = () => {
 
 const createYearData = () => {
   return {
-    subjects: createSubjectData(),
+    Textbook: {
+      subjects: createSubjectData(),
+    },
+
+    Parikshabodh: {
+      subjects: createSubjectData(),
+    },
+
+    Practical: {
+      subjects: createSubjectData(),
+    },
+
+    Project: {
+      subjects: createSubjectData(),
+    },
   };
 };
 
@@ -189,6 +386,7 @@ const handleInputChange = (
   schoolIndex,
   className,
   year,
+  type,
   subject,
   medium,
   subSubject,
@@ -196,177 +394,97 @@ const handleInputChange = (
   field,
   value
 ) => {
+  setSchools((prev) =>
+    prev.map((school, index) => {
+      if (index !== schoolIndex) {
+        return school;
+      }
 
-setSchools((prev)=>{
+      const updated = structuredClone(school);
 
-const updated=[...prev];
+      if (!updated.classes) {
+        updated.classes = {};
+      }
 
-const school = updated[schoolIndex];
+      if (!updated.classes[className]) {
+        updated.classes[className] = {};
+      }
 
-if(!school) return prev;
+      if (!updated.classes[className][year]) {
+        updated.classes[className][year] = createYearData();
+      }
 
+      const yearData =
+        updated.classes[className][year];
 
-// create classes if missing
-school.classes = school.classes || {};
+      // Selected type create karo
+      if (!yearData[type]) {
+        yearData[type] = {
+          subjects: {},
+        };
+      }
 
-school.classes[className] =
-school.classes[className] || {};
+      if (!yearData[type].subjects) {
+        yearData[type].subjects = {};
+      }
 
-school.classes[className][year] =
-school.classes[className][year] || {
-  subjects:{}
+      const subjectsData =
+        yearData[type].subjects;
+
+      // ==============================
+      // GROUP SUBJECT
+      // ==============================
+      if (subjectGroups[subject]) {
+        if (!subjectsData[subject]) {
+          subjectsData[subject] = {};
+        }
+
+        if (!subjectsData[subject][medium]) {
+          subjectsData[subject][medium] = {};
+        }
+
+        if (!subjectsData[subject][medium][subSubject]) {
+          subjectsData[subject][medium][subSubject] = [];
+        }
+
+        if (
+          !subjectsData[subject][medium][subSubject][rowIndex]
+        ) {
+          subjectsData[subject][medium][subSubject][rowIndex] = {
+            teacherName: "",
+            number: "",
+            qty: "",
+          };
+        }
+
+        subjectsData[subject][medium][subSubject][rowIndex][
+          field
+        ] = value;
+      }
+
+      // ==============================
+      // NORMAL SUBJECT
+      // ==============================
+      else {
+        if (!Array.isArray(subjectsData[subject])) {
+          subjectsData[subject] = [];
+        }
+
+        if (!subjectsData[subject][rowIndex]) {
+          subjectsData[subject][rowIndex] = {
+            teacherName: "",
+            number: "",
+            qty: "",
+          };
+        }
+
+        subjectsData[subject][rowIndex][field] = value;
+      }
+
+      return updated;
+    })
+  );
 };
-
-
-school.classes[className][year].subjects =
-school.classes[className][year].subjects || {};
-
-
-const subjects =
-school.classes[className][year].subjects;
-
-
-// create subject if missing
-if(!subjects[subject]){
-
- if(medium && subSubject){
-
-  subjects[subject]={};
-
-  subjects[subject][medium]={};
-
-  subjects[subject][medium][subSubject]=[];
-
- }
- else{
-
-  subjects[subject]=[];
-
- }
-
-}
-
-
-
-if(medium && subSubject){
-
-
-if(!subjects[subject][medium]){
- subjects[subject][medium]={};
-}
-
-
-if(!subjects[subject][medium][subSubject]){
- subjects[subject][medium][subSubject]=[];
-}
-
-
-
-if(!subjects[subject][medium][subSubject][rowIndex]){
-
-subjects[subject][medium][subSubject][rowIndex]={
-
-  teacherName:"",
- number:""
- 
-};
-
-}
-
-
-subjects[subject][medium][subSubject][rowIndex]={
- ...subjects[subject][medium][subSubject][rowIndex],
- [field]:value
-};
-
-
-}
-else{
-
-
-if(!subjects[subject][rowIndex]){
-
-subjects[subject][rowIndex]={
- Principal:"",
-  teacherName:"",
- number:""
-
-};
-
-}
-
-
-subjects[subject][rowIndex]={
- ...subjects[subject][rowIndex],
- [field]:value
-};
-
-
-}
-
-
-return updated;
-
-});
-
-};
-
-console.log("SchoolRecords Data:", schools);
-const hasData = (school) => {
-
-  return subjects.some((subject) => {
-
-    const subjectData =
-      school.classes?.[selectedClass]?.[selectedYear]
-      ?.subjects?.[subject];
-
-
-    if (!subjectData) return false;
-
-
-// Normal Subject
-if (Array.isArray(subjectData)) {
-
-  return subjectData.some((row) => {
-
-    if (!row) return false;
-
-    return (
-      row.teacherName?.trim() !== "" ||
-      row.number?.trim() !== "" ||
-      Number(row.qty || 0) > 0
-    );
-
-  });
-
-}
-
-
-// Group Subject
-return Object.values(subjectData).some((medium)=>{
-
-  return Object.values(medium).some((subSubject)=>{
-
-    return subSubject.some((row)=>{
-
-      return (
-        row?.teacherName?.trim() ||
-        row?.number?.trim() ||
-        Number(row?.qty || 0) > 0
-      );
-
-    });
-
-  });
-
-});
-
-
-});   
-
-
-};  
-
 
 const toggleExportYear = (year) => {
   setSelectedExportYears((prev) => {
@@ -556,13 +674,33 @@ const handleExport = (type) => {
 
       // ===================================================
       // GROUP SUBJECT
+      // Subject -> Medium -> SubSubject
       // ===================================================
 
       if (exportSubjectGroups[subject]) {
-        const subSubjects = exportSubjectGroups[subject];
+        const mediumNames = [
+          "English Medium",
+          "Hindi Medium",
+        ];
 
-        const totalCols =
-          subSubjects.length * 2 * 2;
+        // ===============================================
+        // TOTAL COLUMNS
+        // ===============================================
+
+        const totalCols = mediumNames.reduce(
+          (total, medium) => {
+            const subSubjects =
+              exportSubjectGroups[subject]?.[medium] || [];
+
+            return total + subSubjects.length * 2;
+          },
+          0
+        );
+
+        // Agar subject me koi sub-subject nahi hai
+        if (totalCols === 0) {
+          return;
+        }
 
         // ===============================================
         // SUBJECT MERGE
@@ -587,12 +725,16 @@ const handleExport = (type) => {
         // MEDIUMS
         // ===============================================
 
-        [
-          "English Medium",
-          "Hindi Medium",
-        ].forEach((medium) => {
+        mediumNames.forEach((medium) => {
+          const subSubjects =
+            exportSubjectGroups[subject]?.[medium] || [];
+
           const mediumCols =
             subSubjects.length * 2;
+
+          if (mediumCols === 0) {
+            return;
+          }
 
           // =============================================
           // MEDIUM MERGE
@@ -798,8 +940,11 @@ const handleExport = (type) => {
           // =============================================
 
           exportSubjects.forEach((subject) => {
+
             const data =
-              classData?.subjects?.[
+              classData?.[
+                selectedType
+              ]?.subjects?.[
                 subject
               ];
 
@@ -809,9 +954,11 @@ const handleExport = (type) => {
 
             // =========================================
             // GROUP SUBJECT
+            // Subject -> Medium -> SubSubject -> Array
             // =========================================
 
             if (!Array.isArray(data)) {
+
               Object.values(data).forEach(
                 (mediumData) => {
 
@@ -825,22 +972,28 @@ const handleExport = (type) => {
                       }
 
                       subArray.forEach((item) => {
+
                         if (
                           String(
                             item?.teacherName ?? ""
                           ).trim() !== "" ||
+
                           String(
                             item?.number ?? ""
                           ).trim() !== "" ||
+
                           Number(
                             item?.qty || 0
                           ) > 0
                         ) {
                           filled = true;
                         }
+
                       });
+
                     }
                   );
+
                 }
               );
             }
@@ -850,24 +1003,33 @@ const handleExport = (type) => {
             // =========================================
 
             else {
+
               data.forEach((item) => {
+
                 if (
                   String(
                     item?.teacherName ?? ""
                   ).trim() !== "" ||
+
                   String(
                     item?.number ?? ""
                   ).trim() !== "" ||
+
                   Number(
                     item?.qty || 0
                   ) > 0
                 ) {
                   filled = true;
                 }
+
               });
+
             }
+
           });
+
         });
+
       });
 
       return filled;
@@ -951,11 +1113,7 @@ const handleExport = (type) => {
               school.schoolName || "",
               className,
               year,
-
-              // PRINCIPAL
               principal,
-
-              // REMARK
               classRemark,
             ];
 
@@ -967,7 +1125,9 @@ const handleExport = (type) => {
               (subject) => {
 
                 const data =
-                  classData?.subjects?.[
+                  classData?.[
+                    selectedType
+                  ]?.subjects?.[
                     subject
                   ];
 
@@ -980,15 +1140,17 @@ const handleExport = (type) => {
                   !Array.isArray(data)
                 ) {
 
-                  [
+                  const mediumNames = [
                     "English Medium",
                     "Hindi Medium",
-                  ].forEach((medium) => {
+                  ];
+
+                  mediumNames.forEach((medium) => {
 
                     const subSubjects =
                       exportSubjectGroups[
                         subject
-                      ] || [];
+                      ]?.[medium] || [];
 
                     subSubjects.forEach((sub) => {
 
@@ -1027,8 +1189,11 @@ const handleExport = (type) => {
                         names,
                         numbers
                       );
+
                     });
+
                   });
+
                 }
 
                 // =======================================
@@ -1058,7 +1223,9 @@ const handleExport = (type) => {
                     names,
                     numbers
                   );
+
                 }
+
               }
             );
 
@@ -1070,6 +1237,7 @@ const handleExport = (type) => {
               type === "empty" &&
               !schoolHasFilledData
             ) {
+
               if (
                 !String(
                   classRemark || ""
@@ -1078,6 +1246,7 @@ const handleExport = (type) => {
                 row[6] =
                   "Pending Book Entry";
               }
+
             }
 
             // =========================================
@@ -1085,8 +1254,11 @@ const handleExport = (type) => {
             // =========================================
 
             rows.push(row);
+
           });
+
         });
+
       }
     );
 
@@ -1095,6 +1267,7 @@ const handleExport = (type) => {
     // =====================================================
 
     if (rows.length <= 4) {
+
       alert(
         type === "filled"
           ? `No filled school data found for ${validExportYears.join(
@@ -1188,6 +1361,7 @@ const handleExport = (type) => {
           return {
             wch: 22,
           };
+
         }
       );
 
@@ -1218,6 +1392,7 @@ const handleExport = (type) => {
             horizontal: "center",
           },
         };
+
       }
     );
 
@@ -1254,7 +1429,9 @@ const handleExport = (type) => {
                   maxLines =
                     lineCount;
                 }
+
               }
+
             }
           );
 
@@ -1264,6 +1441,7 @@ const handleExport = (type) => {
               maxLines * 18
             ),
           };
+
         }
       );
 
@@ -1427,12 +1605,14 @@ const handleDeleteSubject = (subject) => {
         if (!classData) return;
 
         Object.keys(classData).forEach((year) => {
-          const subjectsData =
-            classData[year]?.subjects;
+          BOOK_TYPES.forEach((type) => {
+  const subjectsData =
+    classData[year]?.[type]?.subjects;
 
-          if (!subjectsData) return;
+  if (!subjectsData) return;
 
-          delete subjectsData[subject];
+  delete subjectsData[subject];
+});
         });
       });
 
@@ -1480,17 +1660,19 @@ const handleDeleteMedium = (subject, medium) => {
         if (!classData) return;
 
         Object.keys(classData).forEach((year) => {
-          const subjectsData =
-            classData[year]?.subjects;
+        BOOK_TYPES.forEach((type) => {
+  const subjectsData =
+    classData[year]?.[type]?.subjects;
 
-          if (!subjectsData) return;
+  if (!subjectsData) return;
 
-          const subjectData =
-            subjectsData[subject];
+  const subjectData =
+    subjectsData[subject];
 
-          if (!subjectData) return;
+  if (!subjectData) return;
 
-          delete subjectData[medium];
+  delete subjectData[medium];
+});
         });
       });
 
@@ -1550,22 +1732,24 @@ const handleDeleteSubSubject = (
         if (!classData) return;
 
         Object.keys(classData).forEach((year) => {
-          const subjectsData =
-            classData[year]?.subjects;
+       BOOK_TYPES.forEach((type) => {
+  const subjectsData =
+    classData[year]?.[type]?.subjects;
 
-          if (!subjectsData) return;
+  if (!subjectsData) return;
 
-          const subjectData =
-            subjectsData[subject];
+  const subjectData =
+    subjectsData[subject];
 
-          if (!subjectData) return;
+  if (!subjectData) return;
 
-          const mediumData =
-            subjectData[medium];
+  const mediumData =
+    subjectData[medium];
 
-          if (!mediumData) return;
+  if (!mediumData) return;
 
-          delete mediumData[subSubject];
+  delete mediumData[subSubject];
+});
         });
       });
 
@@ -1724,54 +1908,58 @@ const addTeacherRow = () => {
       // MAKE SURE YEAR EXISTS
       // ==========================================
 
-      if (!updated.classes[selectedClass][selectedYear]) {
-        updated.classes[selectedClass][selectedYear] = {
-          subjects: {},
-        };
-      }
+     if (!updated.classes[selectedClass][selectedYear]) {
+  updated.classes[selectedClass][selectedYear] =
+    createYearData();
+}
 
-      const yearData =
-        updated.classes[selectedClass][selectedYear];
+const yearData =
+  updated.classes[selectedClass][selectedYear];
 
-      if (!yearData.subjects) {
-        yearData.subjects = {};
-      }
+if (!yearData[selectedType]) {
+  yearData[selectedType] = {
+    subjects: {},
+  };
+}
 
-      const subjectsData = yearData.subjects;
+if (!yearData[selectedType].subjects) {
+  yearData[selectedType].subjects = {};
+}
+
+const subjectsData =
+  yearData[selectedType].subjects;
 
       // ==========================================
       // GROUP SUBJECT
       // ==========================================
 
-      if (groupSubjects) {
-        if (!subjectsData[selectedSubject]) {
-          subjectsData[selectedSubject] = {};
-        }
+     if (groupSubjects) {
+  if (!subjectsData[selectedSubject]) {
+    subjectsData[selectedSubject] = {};
+  }
 
-        // ----------------------------------------
-        // ONLY EXISTING GLOBAL MEDIUMS
-        // ----------------------------------------
+  mediums.forEach((medium) => {
+    if (!subjectsData[selectedSubject][medium]) {
+      subjectsData[selectedSubject][medium] = {};
+    }
 
-        mediums.forEach((medium) => {
-          if (!subjectsData[selectedSubject][medium]) {
-            subjectsData[selectedSubject][medium] = {};
-          }
+    const mediumSubjects = groupSubjects[medium] || [];
 
-          groupSubjects.forEach((subSubject) => {
-            if (
-              !subjectsData[selectedSubject][medium][subSubject]
-            ) {
-              subjectsData[selectedSubject][medium][subSubject] = [];
-            }
-
-            subjectsData[selectedSubject][medium][subSubject].push({
-              teacherName: "",
-              number: "",
-              qty: "",
-            });
-          });
-        });
+    mediumSubjects.forEach((subSubject) => {
+      if (
+        !subjectsData[selectedSubject][medium][subSubject]
+      ) {
+        subjectsData[selectedSubject][medium][subSubject] = [];
       }
+
+      subjectsData[selectedSubject][medium][subSubject].push({
+        teacherName: "",
+        number: "",
+        qty: "",
+      });
+    });
+  });
+}
 
       // ==========================================
       // NORMAL SUBJECT
@@ -1831,18 +2019,26 @@ const addSubSubject = () => {
     const updated = structuredClone(prev);
 
     // Existing Main Subject
-    if (updated[main]) {
-      subList.forEach((sub) => {
-        if (!updated[main].includes(sub)) {
-          updated[main].push(sub);
-        }
-      });
+   if (updated[main]) {
+  // Add new sub-subjects to BOTH mediums
+  ["English Medium", "Hindi Medium"].forEach((medium) => {
+    if (!updated[main][medium]) {
+      updated[main][medium] = [];
     }
 
-    // New Main Subject
-    else {
-      updated[main] = [...subList];
-    }
+    subList.forEach((sub) => {
+      if (!updated[main][medium].includes(sub)) {
+        updated[main][medium].push(sub);
+      }
+    });
+  });
+} else {
+  // New main subject
+  updated[main] = {
+    "English Medium": [...subList],
+    "Hindi Medium": [...subList],
+  };
+}
 
     return updated;
   });
@@ -1876,33 +2072,48 @@ const addSubSubject = () => {
 
           if (!yearData) return;
 
-          if (!yearData.subjects) {
-            yearData.subjects = {};
-          }
+          BOOK_TYPES.forEach((type) => {
 
-          const subjectsData = yearData.subjects;
+  if (!yearData[type]) {
+    yearData[type] = {
+      subjects: {},
+    };
+  }
 
-          // Create main subject if missing
-          if (!subjectsData[main]) {
-            subjectsData[main] = {};
-          }
+  if (!yearData[type].subjects) {
+    yearData[type].subjects = {};
+  }
 
-          // =================================================
-          // ENGLISH + HINDI MEDIUM
-          // =================================================
+  const subjectsData =
+    yearData[type].subjects;
 
-          ["English Medium", "Hindi Medium"].forEach((medium) => {
-            if (!subjectsData[main][medium]) {
-              subjectsData[main][medium] = {};
-            }
+  // Create main subject if missing
+  if (!subjectsData[main]) {
+    subjectsData[main] = {};
+  }
 
-            subList.forEach((sub) => {
-              // Existing sub subject ko touch nahi karega
-              if (!subjectsData[main][medium][sub]) {
-                subjectsData[main][medium][sub] = [];
-              }
-            });
-          });
+  // =================================================
+  // ENGLISH + HINDI MEDIUM
+  // =================================================
+
+  ["English Medium", "Hindi Medium"].forEach((medium) => {
+
+    if (!subjectsData[main][medium]) {
+      subjectsData[main][medium] = {};
+    }
+
+    subList.forEach((sub) => {
+
+      // Existing sub subject ko touch nahi karega
+      if (!subjectsData[main][medium][sub]) {
+        subjectsData[main][medium][sub] = [];
+      }
+
+    });
+
+  });
+
+});
         });
       });
 
@@ -1979,11 +2190,12 @@ const addSubSubject = () => {
 
             {/* IMPORT EXCEL BUTTON */}
 
-            <ImportExcel
+   <ImportExcel
   setSchools={setSchools}
   subjects={subjects}
+  subjectGroups={subjectGroups}
+  selectedType={selectedType}
 />
-
 <button
   className="
     group
@@ -2206,12 +2418,18 @@ Export Empty
   setSchools={setSchools}
   subjects={subjects}
   subjectGroups={subjectGroups}
+  setSubjectGroups={setSubjectGroups}
   mediums={mediums}
   years={years}
   selectedSchool={selectedSchool}
 
+  selectedType={selectedType}
+  setSelectedType={setSelectedType}
+  BOOK_TYPES={BOOK_TYPES}
+
   deletedMediums={deletedMediums}
   deletedSubSubjects={deletedSubSubjects}
+  setDeletedSubSubjects={setDeletedSubSubjects}
 
   handleInputChange={handleInputChange}
   handleDeleteSchool={handleDeleteSchool}
@@ -2219,7 +2437,6 @@ Export Empty
   handleDeleteMedium={handleDeleteMedium}
   handleDeleteSubSubject={handleDeleteSubSubject}
 />
-
 </div>
 
   );

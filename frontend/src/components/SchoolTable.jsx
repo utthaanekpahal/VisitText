@@ -5,14 +5,21 @@ export default function SchoolTable({
   setSchools,
   subjects,
   subjectGroups,
+  setSubjectGroups,
   mediums,
   years,
   selectedSchool,
 
+  selectedType,
+  setSelectedType,
+  BOOK_TYPES,
+
   deletedMediums,
   deletedSubSubjects,
+  setDeletedSubSubjects,
 
   handleInputChange,
+
   handleDeleteSchool,
   handleDeleteSubject,
   handleDeleteMedium,
@@ -55,7 +62,7 @@ const handleYearChange = (year) => {
       return prev.filter((y) => y !== year);
     }
 
-    // Agar selected nahi hai → add
+
     return [...prev, year].sort(
       (a, b) => Number(a) - Number(b)
     );
@@ -89,74 +96,222 @@ const getVisibleSubSubjects = (subject, medium) => {
 
   const deleted = deletedSubSubjects?.[key] || [];
 
-  return (subjectGroups[subject] || []).filter(
+  return (subjectGroups[subject]?.[medium] || []).filter(
     (sub) => !deleted.includes(sub)
   );
 };
 
 
+
 // ================= EDIT SUBJECT =================
+
 const handleEditSubject = (oldSubject, newSubject) => {
-  if (!newSubject.trim() || oldSubject === newSubject) return;
+  if (!newSubject.trim() || oldSubject === newSubject) {
+    return;
+  }
 
   const value = newSubject.trim();
+
+  // ================= CHECK DUPLICATE SUBJECT =================
+
+  if (
+    subjects.some(
+      (subject) =>
+        subject.toLowerCase() === value.toLowerCase() &&
+        subject !== oldSubject
+    )
+  ) {
+    alert("This subject already exists.");
+    return;
+  }
+
+  // ================= UPDATE SUBJECT GROUPS =================
+
+  setSubjectGroups((prev) => {
+    const updated = structuredClone(prev);
+
+    if (updated[oldSubject]) {
+      updated[value] = updated[oldSubject];
+
+      delete updated[oldSubject];
+    }
+
+    return updated;
+  });
+
+  // ================= UPDATE SUBJECT LIST =================
+
+  setSubjects((prev) => {
+    const updated = prev.map((subject) =>
+      subject === oldSubject ? value : subject
+    );
+
+    return updated;
+  });
+
+  // ================= UPDATE SCHOOL DATA =================
 
   setSchools((prev) =>
     prev.map((school) => {
       const newSchool = structuredClone(school);
 
       ["Class 11", "Class 12"].forEach((className) => {
-        Object.keys(newSchool.classes?.[className] || {}).forEach((year) => {
-          const subjectsData =
-            newSchool.classes?.[className]?.[year]?.subjects;
+        Object.keys(
+          newSchool.classes?.[className] || {}
+        ).forEach((year) => {
 
-          if (!subjectsData || !subjectsData[oldSubject]) return;
+          // Update ALL BOOK TYPES
+          BOOK_TYPES.forEach((type) => {
+            const subjectsData =
+              newSchool.classes?.[className]?.[year]
+                ?.[type]
+                ?.subjects;
 
-          subjectsData[value] = subjectsData[oldSubject];
-          delete subjectsData[oldSubject];
+            if (
+              !subjectsData ||
+              !subjectsData[oldSubject]
+            ) {
+              return;
+            }
+
+            subjectsData[value] =
+              subjectsData[oldSubject];
+
+            delete subjectsData[oldSubject];
+          });
+
         });
       });
 
       return newSchool;
     })
   );
+
+  // ================= UPDATE SELECTED SUBJECT =================
+
+  if (selectedSubject === oldSubject) {
+    setSelectedSubject(value);
+  }
+
+  console.log(
+    `Subject changed: ${oldSubject} → ${value}`
+  );
 };
 
 
-
-
 // ================= EDIT SUB SUBJECT =================
+
 const handleEditSubSubject = (
   subject,
   medium,
   oldSub,
   newSub
 ) => {
-  if (!newSub.trim() || oldSub === newSub) return;
+  if (!newSub.trim() || oldSub === newSub) {
+    return;
+  }
 
   const value = newSub.trim();
+
+  // ================= CHECK DUPLICATE =================
+
+  const existingSubSubjects =
+    subjectGroups?.[subject]?.[medium] || [];
+
+  if (
+    existingSubSubjects.some(
+      (sub) =>
+        sub.toLowerCase() === value.toLowerCase() &&
+        sub !== oldSub
+    )
+  ) {
+    alert("This sub-subject already exists.");
+    return;
+  }
+
+  // ================= UPDATE SUBJECT GROUPS =================
+
+  setSubjectGroups((prev) => {
+    const updated = structuredClone(prev);
+
+    const subSubjects =
+      updated?.[subject]?.[medium];
+
+    if (!Array.isArray(subSubjects)) {
+      return prev;
+    }
+
+    updated[subject][medium] =
+      subSubjects.map((sub) =>
+        sub === oldSub ? value : sub
+      );
+
+    return updated;
+  });
+
+  // ================= UPDATE SCHOOL DATA =================
 
   setSchools((prev) =>
     prev.map((school) => {
       const newSchool = structuredClone(school);
 
       ["Class 11", "Class 12"].forEach((className) => {
-        Object.keys(newSchool.classes?.[className] || {}).forEach((year) => {
-          const mediumData =
-            newSchool.classes?.[className]?.[year]
-              ?.subjects?.[subject]?.[medium];
+        Object.keys(
+          newSchool.classes?.[className] || {}
+        ).forEach((year) => {
 
-          if (!mediumData || !mediumData[oldSub]) return;
+          // Update ALL BOOK TYPES
+          BOOK_TYPES.forEach((type) => {
 
-          mediumData[value] = mediumData[oldSub];
-          delete mediumData[oldSub];
+            const mediumData =
+              newSchool.classes?.[className]?.[year]
+                ?.[type]
+                ?.subjects?.[subject]
+                ?.[medium];
+
+            if (
+              !mediumData ||
+              !mediumData[oldSub]
+            ) {
+              return;
+            }
+
+            mediumData[value] =
+              mediumData[oldSub];
+
+            delete mediumData[oldSub];
+          });
+
         });
       });
 
       return newSchool;
     })
   );
+
+  // ================= REMOVE OLD FROM DELETED LIST =================
+
+  const deleteKey =
+    `${subject}__${medium}`;
+
+  setDeletedSubSubjects((prev) => {
+    const updated = structuredClone(prev);
+
+    if (updated[deleteKey]) {
+      updated[deleteKey] =
+        updated[deleteKey].filter(
+          (sub) => sub !== oldSub
+        );
+    }
+
+    return updated;
+  });
+
+  console.log(
+    `Sub-subject changed: ${oldSub} → ${value}`
+  );
 };
+
 
 
   const rowsPerPage = 5;
@@ -270,6 +425,18 @@ const filteredSchools = schools.filter((school) => {
   <option value="Class 11">Class 11</option>
   <option value="Class 12">Class 12</option>
 </select>
+
+<select
+  value={selectedType}
+  onChange={(e) => setSelectedType(e.target.value)}
+>
+
+  <option value="Textbook">Textbook</option>
+  <option value="Parikshabodh">Parikshabodh</option>
+  <option value="Practical">Practical</option>
+  <option value="Project">Project</option>
+</select>
+
 <div className="relative">
   <details className="relative z-[100]">
     <summary
@@ -346,6 +513,8 @@ const filteredSchools = schools.filter((school) => {
       ))}
     </div>
   </details>
+
+  
 </div>
   </div>
 
@@ -373,7 +542,7 @@ const filteredSchools = schools.filter((school) => {
       border border-black 
       bg-white
       text-center
-      text-xl
+      text-xl 
     "
   >
     S.No.
@@ -389,7 +558,7 @@ const filteredSchools = schools.filter((school) => {
       border border-black
       bg-white
       text-center
-      text-xl
+      text-xl                                                                                                                                   
     "
   >
     Code
@@ -708,24 +877,27 @@ visibleClasses.forEach((className) => {
 
                 let max = 1;
 
-                getVisibleMediums(subject).forEach((medium) => {
+       getVisibleMediums(subject).forEach((medium) => {
 
-  subjectGroups[subject].forEach((sub) => {
+  getVisibleSubSubjects(subject, medium).forEach((sub) => {
 
-                    const len =
-                      school.classes?.[className]?.[year]
-                        ?.subjects?.[subject]
-                        ?. [medium]
-                        ?. [sub]
-                        ?.length || 0;
+    const len =
+      school.classes?.[className]?.[year]
+        ?.[selectedType]
+        ?.subjects?.[subject]
+        ?.[medium]
+        ?.[sub]
+        ?.length || 0;
 
-                    if (len > max) {
-                      max = len;
-                    }
+    if (len > max) {
+      max = len;
+    }
 
-                  });
+  });
 
-                });
+});
+
+
 
                 return max;
               }
@@ -757,7 +929,7 @@ visibleClasses.forEach((className) => {
 
       // =====================================================
       // SCHOOL
-      // =====================================================
+      // =====================================================                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
 
       return (
 
@@ -783,22 +955,23 @@ visibleClasses.forEach((className) => {
 
   getVisibleMediums(subject).forEach((medium) => {
 
-    subjectGroups[subject].forEach((sub) => {
+  getVisibleSubSubjects(subject, medium).forEach((sub) => {
 
-                        const len =
-                          school.classes?.[className]?.[year]
-                            ?.subjects?.[subject]
-                            ?. [medium]
-                            ?. [sub]
-                            ?.length || 0;
+    const len =
+      school.classes?.[className]?.[year]
+        ?.[selectedType]
+        ?.subjects?.[subject]
+        ?.[medium]
+        ?.[sub]
+        ?.length || 0;
 
-                        if (len > max) {
-                          max = len;
-                        }
+    if (len > max) {
+      max = len;
+    }
 
-                      });
+  });
 
-                    });
+});
 
                     return max;
                   }
@@ -943,9 +1116,7 @@ const isLastSchoolRow =
                     )}
 
 
-                    {/* =================================================
-                        CLASS
-                    ================================================= */}
+                    
 
                     {teacherRow === 0 && (
 
@@ -1041,11 +1212,12 @@ if (subjectGroups[subject]) {
 
     getVisibleSubSubjects(subject, medium).map((sub) => {
 
-      const teachers =
-        school.classes?.[className]?.[year]
-          ?.subjects?.[subject]
-          ?.[medium]
-          ?. [sub] || [];
+    const teachers =
+  school.classes?.[className]?.[year]
+    ?.[selectedType]
+    ?.subjects?.[subject]
+    ?.[medium]
+    ?.[sub] || [];
 
       const teacher =
         teachers[teacherRow] || {};
@@ -1066,17 +1238,18 @@ if (subjectGroups[subject]) {
             <textarea
               value={teacher.teacherName || ""}
               onChange={(e) =>
-                handleInputChange(
-                  originalIndex,
-                  className,
-                  year,
-                  subject,
-                  medium,
-                  sub,
-                  teacherRow,
-                  "teacherName",
-                  e.target.value
-                )
+ handleInputChange(
+  originalIndex,
+  className,
+  year,
+  selectedType,
+  subject,
+  medium,
+  sub,
+  teacherRow,
+  "teacherName",
+  e.target.value
+)
               }
               rows={1}
               className="
@@ -1109,17 +1282,18 @@ if (subjectGroups[subject]) {
             <textarea
               value={teacher.number || ""}
               onChange={(e) =>
-                handleInputChange(
-                  originalIndex,
-                  className,
-                  year,
-                  subject,
-                  medium,
-                  sub,
-                  teacherRow,
-                  "number",
-                  e.target.value
-                )
+       handleInputChange(
+  originalIndex,
+  className,
+  year,
+  selectedType,
+  subject,
+  medium,
+  sub,
+  teacherRow,
+  "number",
+  e.target.value
+)
               }
               rows={1}
               className="
@@ -1169,26 +1343,24 @@ if (subjectGroups[subject]) {
 
 
 
-{/* ================= PRINCIPAL ================= */}
-
-
 
 {/* ================= NAME ================= */}
 <td className="border p-1 text-center min-w-[180px]">
   <textarea
     value={teacher.teacherName || ""}
     onChange={(e) =>
-      handleInputChange(
-        originalIndex,
-        className,
-        year,
-        subject,
-        medium,
-        sub,
-        teacherRow,
-        "teacherName",
-        e.target.value
-      )
+   handleInputChange(
+  originalIndex,
+  className,
+  year,
+  selectedType,
+  subject,
+  null,
+  null,
+  teacherRow,
+  "teacherName",
+  e.target.value
+)
     }
     rows={1}
     className="
@@ -1221,17 +1393,18 @@ if (subjectGroups[subject]) {
   <textarea
     value={teacher.number || ""}
     onChange={(e) =>
-      handleInputChange(
-        originalIndex,
-        className,
-        year,
-        subject,
-        medium,
-        sub,
-        teacherRow,
-        "number",
-        e.target.value
-      )
+  handleInputChange(
+  originalIndex,
+  className,
+  year,
+  selectedType,
+  subject,
+  null,
+  null,
+  teacherRow,
+  "number",
+  e.target.value
+)
     }
     rows={1}
     className="
