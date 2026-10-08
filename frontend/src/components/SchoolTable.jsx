@@ -365,8 +365,7 @@ const filteredSchools = schools.filter((school) => {
 
       {/* ================= SEARCH ================= */}
 
-     <div className="p-5 border-b bg-gray-50 flex justify-between items-center">
-
+<div className="sticky top-0 z-50 p-5 border-b bg-gray-50 flex justify-between items-center">
   <div className="flex gap-3">
 <input
   type="text"
@@ -430,11 +429,11 @@ const filteredSchools = schools.filter((school) => {
   value={selectedType}
   onChange={(e) => setSelectedType(e.target.value)}
 >
-
-  <option value="Textbook">Textbook</option>
-  <option value="Parikshabodh">Parikshabodh</option>
-  <option value="Practical">Practical</option>
-  <option value="Project">Project</option>
+  {BOOK_TYPES.map((type) => (
+    <option key={type} value={type}>
+      {type}
+    </option>
+  ))}
 </select>
 
 <div className="relative">

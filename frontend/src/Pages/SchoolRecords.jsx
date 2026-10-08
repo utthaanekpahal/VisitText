@@ -194,14 +194,14 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
               "Accounts",
               "Business Studies",
               "Economics",
-              "Bookkeeping",
+              
             ],
 
             "Hindi Medium": [
               "Lekhashastra",
               "Vyavsay Adhyayan",
               "Arthashastra",
-              "Bahi Khata",
+              
             ],
           },
 
@@ -231,7 +231,7 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
             ],
 
             "Hindi Medium": [
-              "Udyaniki",
+              "Krishi vigyan",
               "Pashupalan",
               "Fasal Utpadan",
             ],
@@ -313,6 +313,7 @@ const BOOK_TYPES = [
   "Parikshabodh",
   "Practical",
   "Project",
+  "Guide"
 ];
 
 
@@ -379,6 +380,10 @@ const createYearData = () => {
     Project: {
       subjects: createSubjectData(),
     },
+
+    Guide: {
+      subjects: createSubjectData(),
+    }
   };
 };
 
@@ -1983,7 +1988,12 @@ const subjectsData =
 };
 
 
+
 const addSubSubject = () => {
+  // ==========================================
+  // STEP 1: MAIN SUBJECT
+  // ==========================================
+
   const mainSubject = prompt("Enter Main Subject");
 
   if (mainSubject === null) return;
@@ -1992,60 +2002,125 @@ const addSubSubject = () => {
 
   if (!main) return;
 
-  const subInput = prompt(
-    "Enter Sub Subjects (comma separated)"
+
+  // ==========================================
+  // STEP 2: ENGLISH MEDIUM
+  // ==========================================
+
+  const englishInput = prompt(
+    "Enter English Medium Sub Subjects\n" +
+    "Example: Biology, Physics\n\n" +
+    "If you don't want English Medium, click Cancel"
   );
 
-  if (subInput === null) return;
+  let englishList = [];
 
-  const subList = subInput
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  if (englishInput !== null) {
+    englishList = englishInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
 
-  if (subList.length === 0) return;
 
-  // =====================================================
-  // CHECK IF MAIN SUBJECT IS NEW
-  // =====================================================
+  // ==========================================
+  // STEP 3: HINDI MEDIUM
+  // ==========================================
+
+  const hindiInput = prompt(
+    "Enter Hindi Medium Sub Subjects\n" +
+    "Example: Jeev Vigyan, Bhautik\n\n" +
+    "If you don't want Hindi Medium, click Cancel"
+  );
+
+  let hindiList = [];
+
+  if (hindiInput !== null) {
+    hindiList = hindiInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+
+  // ==========================================
+  // IF BOTH ARE EMPTY
+  // ==========================================
+
+  if (
+    englishList.length === 0 &&
+    hindiList.length === 0
+  ) {
+    alert("Please enter at least one sub subject.");
+    return;
+  }
+
+
+  // ==========================================
+  // CHECK NEW MAIN SUBJECT
+  // ==========================================
 
   const isNewMainSubject = !subjectGroups[main];
 
-  // =====================================================
+
+  // ==========================================
   // UPDATE SUBJECT GROUPS
-  // =====================================================
+  // ==========================================
 
   setSubjectGroups((prev) => {
     const updated = structuredClone(prev);
 
-    // Existing Main Subject
-   if (updated[main]) {
-  // Add new sub-subjects to BOTH mediums
-  ["English Medium", "Hindi Medium"].forEach((medium) => {
-    if (!updated[main][medium]) {
-      updated[main][medium] = [];
+    // Create main subject if missing
+    if (!updated[main]) {
+      updated[main] = {
+        "English Medium": [],
+        "Hindi Medium": [],
+      };
     }
 
-    subList.forEach((sub) => {
-      if (!updated[main][medium].includes(sub)) {
-        updated[main][medium].push(sub);
+    // Make sure mediums exist
+    if (!updated[main]["English Medium"]) {
+      updated[main]["English Medium"] = [];
+    }
+
+    if (!updated[main]["Hindi Medium"]) {
+      updated[main]["Hindi Medium"] = [];
+    }
+
+
+    // ==========================================
+    // ADD ENGLISH SUB SUBJECTS
+    // ==========================================
+
+    englishList.forEach((sub) => {
+      if (
+        !updated[main]["English Medium"].includes(sub)
+      ) {
+        updated[main]["English Medium"].push(sub);
       }
     });
-  });
-} else {
-  // New main subject
-  updated[main] = {
-    "English Medium": [...subList],
-    "Hindi Medium": [...subList],
-  };
-}
+
+
+    // ==========================================
+    // ADD HINDI SUB SUBJECTS
+    // ==========================================
+
+    hindiList.forEach((sub) => {
+      if (
+        !updated[main]["Hindi Medium"].includes(sub)
+      ) {
+        updated[main]["Hindi Medium"].push(sub);
+      }
+    });
+
 
     return updated;
   });
 
-  // =====================================================
+
+  // ==========================================
   // ADD MAIN SUBJECT TO HEADER
-  // =====================================================
+  // ==========================================
 
   if (isNewMainSubject) {
     setSubjects((prev) => {
@@ -2057,70 +2132,120 @@ const addSubSubject = () => {
     });
   }
 
-  // =====================================================
+
+  // ==========================================
   // UPDATE ALL SCHOOL DATA
-  // =====================================================
+  // ==========================================
 
   setSchools((prev) =>
     prev.map((school) => {
       const updated = structuredClone(school);
 
-      Object.keys(updated.classes || {}).forEach((className) => {
-        Object.keys(updated.classes[className] || {}).forEach((year) => {
-          const yearData =
-            updated.classes[className][year];
+      Object.keys(updated.classes || {}).forEach(
+        (className) => {
 
-          if (!yearData) return;
+          Object.keys(
+            updated.classes[className] || {}
+          ).forEach((year) => {
 
-          BOOK_TYPES.forEach((type) => {
+            const yearData =
+              updated.classes[className][year];
 
-  if (!yearData[type]) {
-    yearData[type] = {
-      subjects: {},
-    };
-  }
+            if (!yearData) return;
 
-  if (!yearData[type].subjects) {
-    yearData[type].subjects = {};
-  }
 
-  const subjectsData =
-    yearData[type].subjects;
+            BOOK_TYPES.forEach((type) => {
 
-  // Create main subject if missing
-  if (!subjectsData[main]) {
-    subjectsData[main] = {};
-  }
+              // Create book type
+              if (!yearData[type]) {
+                yearData[type] = {
+                  subjects: {},
+                };
+              }
 
-  // =================================================
-  // ENGLISH + HINDI MEDIUM
-  // =================================================
 
-  ["English Medium", "Hindi Medium"].forEach((medium) => {
+              // Create subjects
+              if (!yearData[type].subjects) {
+                yearData[type].subjects = {};
+              }
 
-    if (!subjectsData[main][medium]) {
-      subjectsData[main][medium] = {};
-    }
 
-    subList.forEach((sub) => {
+              const subjectsData =
+                yearData[type].subjects;
 
-      // Existing sub subject ko touch nahi karega
-      if (!subjectsData[main][medium][sub]) {
-        subjectsData[main][medium][sub] = [];
-      }
 
-    });
+              // Create main subject
+              if (!subjectsData[main]) {
+                subjectsData[main] = {};
+              }
 
-  });
 
-});
+              // ==================================
+              // ENGLISH MEDIUM
+              // ==================================
+
+              if (
+                englishList.length > 0
+              ) {
+
+                if (
+                  !subjectsData[main]["English Medium"]
+                ) {
+                  subjectsData[main]["English Medium"] =
+                    {};
+                }
+
+                englishList.forEach((sub) => {
+
+                  if (
+                    !subjectsData[main]["English Medium"][sub]
+                  ) {
+                    subjectsData[main]["English Medium"][sub] =
+                      [];
+                  }
+
+                });
+              }
+
+
+              // ==================================
+              // HINDI MEDIUM
+              // ==================================
+
+              if (
+                hindiList.length > 0
+              ) {
+
+                if (
+                  !subjectsData[main]["Hindi Medium"]
+                ) {
+                  subjectsData[main]["Hindi Medium"] =
+                    {};
+                }
+
+                hindiList.forEach((sub) => {
+
+                  if (
+                    !subjectsData[main]["Hindi Medium"][sub]
+                  ) {
+                    subjectsData[main]["Hindi Medium"][sub] =
+                      [];
+                  }
+
+                });
+              }
+
+            });
+
+          });
+
         });
-      });
 
       return updated;
     })
   );
 };
+
 
   return (
 
@@ -2130,7 +2255,8 @@ const addSubSubject = () => {
       {/* ================= HEADER ================= */}
 
 
-      <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 p-10 shadow-2xl">
+      {/* BLUE HEADER */}
+  <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 p-10 shadow-2xl">
 
 
 
@@ -2226,10 +2352,18 @@ className="bg-green-600 text-white px-5 py-3 rounded-xl"
 Export Filled
 </button>
 <button
-onClick={() => handleExport("empty")}
-className="bg-yellow-500 text-white px-5 py-3 rounded-xl"
+  disabled
+  className="
+    bg-gray-400
+    text-gray-200
+    px-5
+    py-3
+    rounded-xl
+    cursor-not-allowed
+    opacity-60
+  "
 >
-Export Empty
+  Export Empty
 </button>
    <button
   className="
