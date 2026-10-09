@@ -2057,7 +2057,7 @@ const addSubSubject = () => {
 
 
   // ==========================================
-  // CHECK NEW MAIN SUBJECT
+  // CHECK MAIN SUBJECT
   // ==========================================
 
   const isNewMainSubject = !subjectGroups[main];
@@ -2070,7 +2070,11 @@ const addSubSubject = () => {
   setSubjectGroups((prev) => {
     const updated = structuredClone(prev);
 
-    // Create main subject if missing
+
+    // ========================================
+    // CREATE MAIN SUBJECT ONLY IF NOT EXISTS
+    // ========================================
+
     if (!updated[main]) {
       updated[main] = {
         "English Medium": [],
@@ -2078,39 +2082,52 @@ const addSubSubject = () => {
       };
     }
 
-    // Make sure mediums exist
+
+    // ========================================
+    // MAKE SURE ENGLISH MEDIUM EXISTS
+    // ========================================
+
     if (!updated[main]["English Medium"]) {
       updated[main]["English Medium"] = [];
     }
+
+
+    // ========================================
+    // MAKE SURE HINDI MEDIUM EXISTS
+    // ========================================
 
     if (!updated[main]["Hindi Medium"]) {
       updated[main]["Hindi Medium"] = [];
     }
 
 
-    // ==========================================
+    // ========================================
     // ADD ENGLISH SUB SUBJECTS
-    // ==========================================
+    // ========================================
 
     englishList.forEach((sub) => {
+
       if (
         !updated[main]["English Medium"].includes(sub)
       ) {
         updated[main]["English Medium"].push(sub);
       }
+
     });
 
 
-    // ==========================================
+    // ========================================
     // ADD HINDI SUB SUBJECTS
-    // ==========================================
+    // ========================================
 
     hindiList.forEach((sub) => {
+
       if (
         !updated[main]["Hindi Medium"].includes(sub)
       ) {
         updated[main]["Hindi Medium"].push(sub);
       }
+
     });
 
 
@@ -2120,16 +2137,21 @@ const addSubSubject = () => {
 
   // ==========================================
   // ADD MAIN SUBJECT TO HEADER
+  // ONLY IF NEW
   // ==========================================
 
   if (isNewMainSubject) {
+
     setSubjects((prev) => {
+
       if (prev.includes(main)) {
         return prev;
       }
 
       return [...prev, main];
+
     });
+
   }
 
 
@@ -2139,7 +2161,9 @@ const addSubSubject = () => {
 
   setSchools((prev) =>
     prev.map((school) => {
+
       const updated = structuredClone(school);
+
 
       Object.keys(updated.classes || {}).forEach(
         (className) => {
@@ -2153,6 +2177,10 @@ const addSubSubject = () => {
 
             if (!yearData) return;
 
+
+            // ==================================
+            // BOOK TYPES
+            // ==================================
 
             BOOK_TYPES.forEach((type) => {
 
@@ -2174,7 +2202,10 @@ const addSubSubject = () => {
                 yearData[type].subjects;
 
 
-              // Create main subject
+              // ==================================
+              // MAIN SUBJECT
+              // ==================================
+
               if (!subjectsData[main]) {
                 subjectsData[main] = {};
               }
@@ -2184,9 +2215,7 @@ const addSubSubject = () => {
               // ENGLISH MEDIUM
               // ==================================
 
-              if (
-                englishList.length > 0
-              ) {
+              if (englishList.length > 0) {
 
                 if (
                   !subjectsData[main]["English Medium"]
@@ -2194,6 +2223,7 @@ const addSubSubject = () => {
                   subjectsData[main]["English Medium"] =
                     {};
                 }
+
 
                 englishList.forEach((sub) => {
 
@@ -2205,6 +2235,7 @@ const addSubSubject = () => {
                   }
 
                 });
+
               }
 
 
@@ -2212,9 +2243,7 @@ const addSubSubject = () => {
               // HINDI MEDIUM
               // ==================================
 
-              if (
-                hindiList.length > 0
-              ) {
+              if (hindiList.length > 0) {
 
                 if (
                   !subjectsData[main]["Hindi Medium"]
@@ -2222,6 +2251,7 @@ const addSubSubject = () => {
                   subjectsData[main]["Hindi Medium"] =
                     {};
                 }
+
 
                 hindiList.forEach((sub) => {
 
@@ -2233,6 +2263,7 @@ const addSubSubject = () => {
                   }
 
                 });
+
               }
 
             });
@@ -2245,7 +2276,6 @@ const addSubSubject = () => {
     })
   );
 };
-
 
   return (
 
