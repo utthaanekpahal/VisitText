@@ -91,13 +91,29 @@ const getVisibleMediums = (subject) => {
   return visible;
 };
 
+
 const getVisibleSubSubjects = (subject, medium) => {
   const key = `${subject}__${medium}`;
-
   const deleted = deletedSubSubjects?.[key] || [];
 
-  return (subjectGroups[subject]?.[medium] || []).filter(
-    (sub) => !deleted.includes(sub)
+  const savedSubSubjects = subjectGroups?.[subject]?.[medium];
+
+  // Support array format and old object format
+  let subSubjects = [];
+
+  if (Array.isArray(savedSubSubjects)) {
+    subSubjects = savedSubSubjects;
+  } else if (
+    savedSubSubjects &&
+    typeof savedSubSubjects === "object"
+  ) {
+    subSubjects = Object.keys(savedSubSubjects);
+  }
+
+  return subSubjects.filter(
+    (sub) =>
+      typeof sub === "string" &&
+      !deleted.includes(sub)
   );
 };
 
@@ -517,7 +533,7 @@ const filteredSchools = schools.filter((school) => {
 </div>
   </div>
 
-  <span className="text-gray-600 font-medium">
+  <span className="text-black font-medium">
     Total: {filteredSchools.length} School(s)
   </span>
 
@@ -627,7 +643,7 @@ const totalColumns = subjectGroups[subject]
   <th
   key={subject}
   colSpan={totalColumns}
-  className="border border-gray-400 min-w-[500px]"
+  className="border border-gray-400 min-w-[500px] text-xl"
 >
   <div className="flex items-center justify-center gap-2">
     <input
@@ -664,14 +680,14 @@ const totalColumns = subjectGroups[subject]
   );
 
   return (
-    <th
-      key={subject}
-      colSpan={3}
-      rowSpan={4}
-      className="border border-gray-400"
-    >
-      {subject}
-    </th>
+ <th
+  key={subject}
+  colSpan={3}
+  rowSpan={4}
+  className="border border-gray-400"
+>
+  {subject}
+</th>
   );
 })}
 
@@ -753,7 +769,7 @@ return getVisibleMediums(subject).flatMap((medium) =>
  <th
   key={medium + sub}
   colSpan={2}
-  className="border border-black min-w-[350px] "
+  className="border border-black min-w-[350px] text-xl"
 >  
   <div className="flex items-center justify-center gap-2">
     <input
@@ -821,14 +837,14 @@ if (subjectGroups[subject]) {
 
       <th
         key={`${subject}-${medium}-${sub}-name`}
-        className="border border-black text-center"
+        className="border border-black text-center text-xl"
       >
         Name
       </th>,
 
       <th
         key={`${subject}-${medium}-${sub}-number`}
-        className="border border-black  text-center"
+        className="border border-black  text-center text-xl"
       >
         Number
       </th>
@@ -1068,6 +1084,7 @@ const isLastSchoolRow =
     align-top
     min-w-[70px]
     w-[70px]
+    text-xl
   "
 >
   {school.code}
@@ -1085,7 +1102,8 @@ const isLastSchoolRow =
     px-6 py-5
     min-w-[250px]
     w-[250px]
-    align-top
+    align-
+    text-xl
   "
 >
   <div className="flex justify-between items-start gap-3">
@@ -1259,8 +1277,8 @@ if (subjectGroups[subject]) {
                 border-0
                 outline-none
                 text-center
-                text-lg
-                font-bold
+                text-xl
+                font-semibold
                 resize-none
                 overflow-hidden
               "
@@ -1303,8 +1321,8 @@ if (subjectGroups[subject]) {
                 border-0
                 outline-none
                 text-center
-                text-lg
-                font-bold
+                text-xl
+                font-semibold
                 resize-none
                 overflow-hidden
               "
@@ -1477,7 +1495,8 @@ if (subjectGroups[subject]) {
         bg-transparent
         border-0
         outline-none
-        text-sm
+        text-xl
+        font-semibold
         py-2
       "
     />

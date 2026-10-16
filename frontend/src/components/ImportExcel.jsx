@@ -329,14 +329,7 @@ export default function ImportExcel({
                         return;
                       }
 
-                      // -----------------------------------
-                      // Group subject
-                      // Example:
-                      // Science
-                      //   English Medium
-                      //      Chemistry
-                      // -----------------------------------
-
+                   
                       if (
                         subjectGroups?.[subject]
                       ) {
@@ -529,13 +522,14 @@ export default function ImportExcel({
         items-center
         gap-2
         rounded-xl
-        bg-emerald-600
+        text-2xl
+        font-bold
         px-6
         py-3
         font-semibold
         text-white
         shadow-lg
-        hover:bg-emerald-700
+      bg-pink-800
       "
     >
       <FiUpload size={20} />

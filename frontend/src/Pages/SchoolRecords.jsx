@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import {
   FiBookOpen,
   FiPlus,
@@ -18,7 +18,7 @@ const [selectedType, setSelectedType] = useState("Textbook");
 const [selectedClass, setSelectedClass] = useState("Class 11");
 const [selectedYear, setSelectedYear] = useState("2026");
 const [selectedExportYears, setSelectedExportYears] = useState([]);
-
+const [selectedExportClass, setSelectedExportClass] = useState("both");
 
 // ======================================================
 // DELETED MEDIUMS
@@ -90,6 +90,8 @@ useEffect(() => {
     JSON.stringify(years)
   );
 }, [years]);
+
+
 
 
 // ======================================================
@@ -167,8 +169,7 @@ useEffect(() => {
 
 const [subjectGroups, setSubjectGroups] = useState(() => {
   try {
-    const saved =
-      localStorage.getItem("schoolSubjectGroups");
+    const saved = localStorage.getItem("schoolSubjectGroups");
 
     return saved
       ? JSON.parse(saved)
@@ -180,12 +181,11 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
               "Biology",
               "Mathematics",
             ],
-
             "Hindi Medium": [
-              "Rasayan",
-              "Bhautik",
-              "Jeev Vigyan",
-              "Ganit",
+              "रसायन",
+              "भौतिक",
+              "जीव विज्ञान",
+              "गणित",
             ],
           },
 
@@ -194,14 +194,11 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
               "Accounts",
               "Business Studies",
               "Economics",
-              
             ],
-
             "Hindi Medium": [
-              "Lekhashastra",
-              "Vyavsay Adhyayan",
-              "Arthashastra",
-              
+              "लेखाशास्त्र",
+              "व्यवसाय अध्ययन",
+              "अर्थशास्त्र",
             ],
           },
 
@@ -213,13 +210,12 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
               "Economics",
               "Sociology",
             ],
-
             "Hindi Medium": [
-              "Rajneeti Vigyan",
-              "Bhugol",
-              "Itihas",
-              "Arthashastra",
-              "Samajshastra",
+              "राजनीति विज्ञान",
+              "भूगोल",
+              "इतिहास",
+              "अर्थशास्त्र",
+              "समाजशास्त्र",
             ],
           },
 
@@ -229,11 +225,11 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
               "Animal Husbandry",
               "Crop Production",
             ],
-
-            "Hindi Medium": [
-              "Krishi vigyan",
-              "Pashupalan",
-              "Fasal Utpadan",
+          
+  "Hindi Medium": [
+    "कृषि विज्ञान",
+    "पशु विज्ञान",
+    "फसल विज्ञान",
             ],
           },
 
@@ -243,11 +239,10 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
               "English",
               "Sanskrit",
             ],
-
             "Hindi Medium": [
-              "Hindi",
-              "Angrezi",
-              "Sanskrit",
+              "हिंदी",
+              "अंग्रेज़ी",
+              "संस्कृत",
             ],
           },
         };
@@ -503,6 +498,11 @@ const toggleExportYear = (year) => {
   });
 };
 
+const exportClassNames =
+  selectedExportClass === "both"
+    ? ["Class 11", "Class 12"]
+    : [`Class ${selectedExportClass}`];
+
 const handleExport = (type) => {
   try {
     // =====================================================
@@ -540,13 +540,12 @@ const handleExport = (type) => {
       : years;
 
     // =====================================================
-    // VALID YEARS
+    // VALIDATE YEARS
     // =====================================================
 
     const validExportYears = selectedExportYears.filter((year) =>
       exportYears.some(
-        (existingYear) =>
-          String(existingYear) === String(year)
+        (existingYear) => String(existingYear) === String(year)
       )
     );
 
@@ -555,747 +554,362 @@ const handleExport = (type) => {
       return;
     }
 
+    // ====================================================
+    // HELPERS
     // =====================================================
-    // ROWS + MERGES
+const classNames = exportClassNames;
+
+    const mediumNames = ["English Medium", "Hindi Medium"];
+
+    const getVerticalValues = (items, field) => {
+      if (!Array.isArray(items)) return "";
+
+      return items
+        .map((item) => String(item?.[field] ?? "").trim())
+        .filter(Boolean)
+        .join("\n");
+    };
+
+    const getClassPrincipal = (school, className) =>
+      String(school?.principal?.[className] ?? "").trim();
+
+    const getClassRemark = (school, className) =>
+      String(school?.remark?.[className] ?? "").trim();
+
+    const hasItemData = (items) => {
+      if (!Array.isArray(items)) return false;
+
+      return items.some(
+        (item) =>
+          String(item?.teacherName ?? "").trim() !== "" ||
+          String(item?.number ?? "").trim() !== "" ||
+          Number(item?.qty || 0) > 0
+      );
+    };
+
+    const hasSubjectData = (subjectData) => {
+      if (Array.isArray(subjectData)) {
+        return hasItemData(subjectData);
+      }
+
+      if (!subjectData || typeof subjectData !== "object") {
+        return false;
+      }
+
+      return Object.values(subjectData).some((mediumData) => {
+        if (!mediumData || typeof mediumData !== "object") {
+          return false;
+        }
+
+        return Object.values(mediumData).some((subItems) =>
+          hasItemData(subItems)
+        );
+      });
+    };
+
+    const getSchoolClassData = (school, className, year) =>
+      school?.classes?.[className]?.[year];
+
+    // =====================================================
+    // CHECK DATA FOR SELECTED TYPE AND SELECTED YEARS
     // =====================================================
 
-    const rows = [];
+    const checkSchoolHasData = (school) => {
+      return classNames.some((className) => {
+        const principal = getClassPrincipal(school, className);
+        const remark = getClassRemark(school, className);
+
+        if (principal || remark) return true;
+
+        return validExportYears.some((year) => {
+          const classData = getSchoolClassData(
+            school,
+            className,
+            year
+          );
+
+          const subjectData =
+            classData?.[selectedType]?.subjects || {};
+
+          return exportSubjects.some((subject) =>
+            hasSubjectData(subjectData[subject])
+          );
+        });
+      });
+    };
+
+    // =====================================================
+    // DETERMINE WHICH SUBJECT COLUMNS CONTAIN DATA
+    // FILLED EXPORT: ONLY EXPORT SUBJECTS WITH DATA
+    // EMPTY EXPORT: KEEP ALL SUBJECTS FOR DATA ENTRY
+    // =====================================================
+
+    const activeSubjects = exportSubjects.filter((subject) => {
+      if (type === "empty") return true;
+
+      return exportSchools.some((school) =>
+        classNames.some((className) =>
+          validExportYears.some((year) => {
+            const classData = getSchoolClassData(
+              school,
+              className,
+              year
+            );
+
+            const data =
+              classData?.[selectedType]?.subjects?.[subject];
+
+            return hasSubjectData(data);
+          })
+        )
+      );
+    });
+
+    // =====================================================
+    // BUILD FOUR HEADER ROWS
+    // =====================================================
+
+    const rows = [
+      ["S.No", "Code", "School Name", "Class", "Year", "Principal", "Remarks"],
+      ["", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", ""],
+    ];
+
     const merges = [];
 
     // =====================================================
-    // HEADER ROW 1
+    // COMMON HEADERS MERGE
     // =====================================================
 
-    rows.push([
-      "S.No",
-      "Code",
-      "School Name",
-      "Class",
-      "Year",
-      "Principal",
-      "Remarks",
-    ]);
+    for (let col = 0; col < 7; col++) {
+      merges.push({
+        s: { r: 0, c: col },
+        e: { r: 3, c: col },
+      });
+    }
 
     // =====================================================
-    // HEADER ROW 2
+    // BUILD SUBJECT / MEDIUM / SUB-SUBJECT HEADERS
     // =====================================================
 
-    rows.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-    ]);
-
-    // =====================================================
-    // HEADER ROW 3
-    // =====================================================
-
-    rows.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-    ]);
-
-    // =====================================================
-    // HEADER ROW 4
-    // =====================================================
-
-    rows.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-    ]);
-
-    // =====================================================
-    // COMMON HEADER MERGES
-    // =====================================================
-
-    // S.No
-    merges.push({
-      s: { r: 0, c: 0 },
-      e: { r: 3, c: 0 },
-    });
-
-    // Code
-    merges.push({
-      s: { r: 0, c: 1 },
-      e: { r: 3, c: 1 },
-    });
-
-    // School Name
-    merges.push({
-      s: { r: 0, c: 2 },
-      e: { r: 3, c: 2 },
-    });
-
-    // Class
-    merges.push({
-      s: { r: 0, c: 3 },
-      e: { r: 3, c: 3 },
-    });
-
-    // Year
-    merges.push({
-      s: { r: 0, c: 4 },
-      e: { r: 3, c: 4 },
-    });
-
-    // Principal
-    merges.push({
-      s: { r: 0, c: 5 },
-      e: { r: 3, c: 5 },
-    });
-
-    // Remarks
-    merges.push({
-      s: { r: 0, c: 6 },
-      e: { r: 3, c: 6 },
-    });
-
-    // =====================================================
-    // SUBJECT START COLUMN
-    // =====================================================
-
+    const columnDefinitions = [];
     let colIndex = 7;
 
-    // =====================================================
-    // SUBJECT HEADERS
-    // =====================================================
+    activeSubjects.forEach((subject) => {
+      const group = exportSubjectGroups?.[subject];
 
-    exportSubjects.forEach((subject) => {
-      const startCol = colIndex;
+      if (group) {
+        const mediumDefinitions = mediumNames
+          .map((medium) => ({
+            medium,
+            subSubjects: Array.isArray(group?.[medium])
+              ? group[medium]
+              : [],
+          }))
+          .filter((item) => item.subSubjects.length > 0);
 
-      // ===================================================
-      // GROUP SUBJECT
-      // Subject -> Medium -> SubSubject
-      // ===================================================
-
-      if (exportSubjectGroups[subject]) {
-        const mediumNames = [
-          "English Medium",
-          "Hindi Medium",
-        ];
-
-        // ===============================================
-        // TOTAL COLUMNS
-        // ===============================================
-
-        const totalCols = mediumNames.reduce(
-          (total, medium) => {
-            const subSubjects =
-              exportSubjectGroups[subject]?.[medium] || [];
-
-            return total + subSubjects.length * 2;
-          },
+        const totalCols = mediumDefinitions.reduce(
+          (sum, item) => sum + item.subSubjects.length * 2,
           0
         );
 
-        // Agar subject me koi sub-subject nahi hai
-        if (totalCols === 0) {
-          return;
-        }
+        if (totalCols === 0) return;
 
-        // ===============================================
-        // SUBJECT MERGE
-        // ===============================================
+        const subjectStart = colIndex;
 
         merges.push({
-          s: {
-            r: 0,
-            c: startCol,
-          },
-          e: {
-            r: 0,
-            c: startCol + totalCols - 1,
-          },
+          s: { r: 0, c: subjectStart },
+          e: { r: 0, c: subjectStart + totalCols - 1 },
         });
 
-        rows[0][startCol] = subject;
+        rows[0][subjectStart] = subject;
 
-        let mediumStart = startCol;
-
-        // ===============================================
-        // MEDIUMS
-        // ===============================================
-
-        mediumNames.forEach((medium) => {
-          const subSubjects =
-            exportSubjectGroups[subject]?.[medium] || [];
-
-          const mediumCols =
-            subSubjects.length * 2;
-
-          if (mediumCols === 0) {
-            return;
-          }
-
-          // =============================================
-          // MEDIUM MERGE
-          // =============================================
+        mediumDefinitions.forEach(({ medium, subSubjects }) => {
+          const mediumStart = colIndex;
+          const mediumCols = subSubjects.length * 2;
 
           merges.push({
-            s: {
-              r: 1,
-              c: mediumStart,
-            },
-            e: {
-              r: 1,
-              c: mediumStart + mediumCols - 1,
-            },
+            s: { r: 1, c: mediumStart },
+            e: { r: 1, c: mediumStart + mediumCols - 1 },
           });
 
           rows[1][mediumStart] = medium;
 
-          // =============================================
-          // SUB SUBJECTS
-          // =============================================
-
           subSubjects.forEach((sub) => {
-            // ===========================================
-            // SUB SUBJECT MERGE
-            // ===========================================
-
             merges.push({
-              s: {
-                r: 2,
-                c: mediumStart,
-              },
-              e: {
-                r: 2,
-                c: mediumStart + 1,
-              },
+              s: { r: 2, c: colIndex },
+              e: { r: 2, c: colIndex + 1 },
             });
 
-            rows[2][mediumStart] = sub;
+            rows[2][colIndex] = sub;
+            rows[3][colIndex] = "Name";
+            rows[3][colIndex + 1] = "Number";
 
-            // ===========================================
-            // NAME
-            // ===========================================
+            columnDefinitions.push({
+              subject,
+              medium,
+              subSubject: sub,
+              nameCol: colIndex,
+              numberCol: colIndex + 1,
+              grouped: true,
+            });
 
-            rows[3][mediumStart] = "Name";
-
-            // ===========================================
-            // NUMBER
-            // ===========================================
-
-            rows[3][mediumStart + 1] = "Number";
-
-            mediumStart += 2;
+            colIndex += 2;
           });
         });
-
-        colIndex += totalCols;
-      }
-
-      // ===================================================
-      // NORMAL SUBJECT
-      // ===================================================
-
-      else {
-        rows[0][startCol] = subject;
-
-        // ===============================================
-        // NORMAL SUBJECT MERGE
-        // ===============================================
+      } else {
+        const subjectStart = colIndex;
 
         merges.push({
-          s: {
-            r: 0,
-            c: startCol,
-          },
-          e: {
-            r: 2,
-            c: startCol + 1,
-          },
+          s: { r: 0, c: subjectStart },
+          e: { r: 2, c: subjectStart + 1 },
         });
 
-        // ===============================================
-        // NAME
-        // ===============================================
+        rows[0][subjectStart] = subject;
+        rows[3][subjectStart] = "Name";
+        rows[3][subjectStart + 1] = "Number";
 
-        rows[3][startCol] = "Name";
-
-        // ===============================================
-        // NUMBER
-        // ===============================================
-
-        rows[3][startCol + 1] = "Number";
+        columnDefinitions.push({
+          subject,
+          medium: null,
+          subSubject: null,
+          nameCol: subjectStart,
+          numberCol: subjectStart + 1,
+          grouped: false,
+        });
 
         colIndex += 2;
       }
     });
 
     // =====================================================
-    // GET VERTICAL VALUES
+    // EXPORT SCHOOL / CLASS / YEAR ROWS
     // =====================================================
 
-    const getVerticalValues = (teachers, field) => {
-      if (!Array.isArray(teachers)) {
-        return "";
-      }
+    exportSchools.forEach((school, schoolIndex) => {
+      const schoolHasData = checkSchoolHasData(school);
 
-      return teachers
-        .map((teacher) =>
-          String(
-            teacher?.[field] ?? ""
-          ).trim()
-        )
-        .filter((value) => value !== "")
-        .join("\n");
-    };
+      if (type === "filled" && !schoolHasData) return;
+      if (type === "empty" && schoolHasData) return;
 
-    // =====================================================
-    // GET CLASS-WISE PRINCIPAL
-    // =====================================================
-
-    const getClassPrincipal = (
-      school,
-      className
-    ) => {
-      return String(
-        school?.principal?.[className] ?? ""
-      ).trim();
-    };
-
-    // =====================================================
-    // GET CLASS-WISE REMARK
-    // =====================================================
-
-    const getClassRemark = (
-      school,
-      className
-    ) => {
-      return String(
-        school?.remark?.[className] ?? ""
-      ).trim();
-    };
-
-    // =====================================================
-    // CHECK SCHOOL HAS DATA
-    // =====================================================
-
-    const checkSchoolHasData = (school) => {
-      let filled = false;
-
-      // ===================================================
-      // CLASS 11 + CLASS 12
-      // ===================================================
-
-      [
-        "Class 11",
-        "Class 12",
-      ].forEach((className) => {
-
-        // ===============================================
-        // CHECK PRINCIPAL
-        // ===============================================
-
-        const principal =
-          getClassPrincipal(
-            school,
-            className
-          );
-
-        if (principal !== "") {
-          filled = true;
-        }
-
-        // ===============================================
-        // CHECK REMARK
-        // ===============================================
-
-        const classRemark =
-          getClassRemark(
-            school,
-            className
-          );
-
-        if (classRemark !== "") {
-          filled = true;
-        }
-
-        // ===============================================
-        // CHECK YEARS
-        // ===============================================
-
+      classNames.forEach((className) => {
         validExportYears.forEach((year) => {
-          const classData =
-            school.classes?.[
-              className
-            ]?.[year];
+          const classData = getSchoolClassData(
+            school,
+            className,
+            year
+          );
 
-          if (!classData) {
-            return;
+          const row = Array(colIndex).fill("");
+
+          row[0] = schoolIndex + 1;
+          row[1] = school?.code || "";
+          row[2] = school?.schoolName || "";
+          row[3] = className;
+          row[4] = year;
+          row[5] = getClassPrincipal(school, className);
+          row[6] = getClassRemark(school, className);
+
+          const subjectData =
+            classData?.[selectedType]?.subjects || {};
+
+          // Use each column's own subject path.
+          // Physics values can never shift into Chemistry columns.
+          columnDefinitions.forEach((definition) => {
+            const {
+              subject,
+              medium,
+              subSubject,
+              nameCol,
+              numberCol,
+              grouped,
+            } = definition;
+
+            const data = subjectData[subject];
+
+            let items = [];
+
+            if (grouped) {
+              const mediumData = data?.[medium];
+              const subItems = mediumData?.[subSubject];
+
+              items = Array.isArray(subItems) ? subItems : [];
+            } else {
+              items = Array.isArray(data) ? data : [];
+            }
+
+            row[nameCol] = getVerticalValues(items, "teacherName");
+            row[numberCol] = getVerticalValues(items, "number");
+          });
+
+          if (
+            type === "empty" &&
+            !String(row[6] || "").trim()
+          ) {
+            row[6] = "Pending Book Entry";
           }
 
-          // =============================================
-          // SUBJECTS
-          // =============================================
-
-          exportSubjects.forEach((subject) => {
-
-            const data =
-              classData?.[
-                selectedType
-              ]?.subjects?.[
-                subject
-              ];
-
-            if (!data) {
-              return;
-            }
-
-            // =========================================
-            // GROUP SUBJECT
-            // Subject -> Medium -> SubSubject -> Array
-            // =========================================
-
-            if (!Array.isArray(data)) {
-
-              Object.values(data).forEach(
-                (mediumData) => {
-
-                  Object.values(
-                    mediumData || {}
-                  ).forEach(
-                    (subArray) => {
-
-                      if (!Array.isArray(subArray)) {
-                        return;
-                      }
-
-                      subArray.forEach((item) => {
-
-                        if (
-                          String(
-                            item?.teacherName ?? ""
-                          ).trim() !== "" ||
-
-                          String(
-                            item?.number ?? ""
-                          ).trim() !== "" ||
-
-                          Number(
-                            item?.qty || 0
-                          ) > 0
-                        ) {
-                          filled = true;
-                        }
-
-                      });
-
-                    }
-                  );
-
-                }
-              );
-            }
-
-            // =========================================
-            // NORMAL SUBJECT
-            // =========================================
-
-            else {
-
-              data.forEach((item) => {
-
-                if (
-                  String(
-                    item?.teacherName ?? ""
-                  ).trim() !== "" ||
-
-                  String(
-                    item?.number ?? ""
-                  ).trim() !== "" ||
-
-                  Number(
-                    item?.qty || 0
-                  ) > 0
-                ) {
-                  filled = true;
-                }
-
-              });
-
-            }
-
-          });
-
+          rows.push(row);
         });
-
       });
-
-      return filled;
-    };
+    });
 
     // =====================================================
-    // EXPORT SCHOOLS
-    // =====================================================
-
-    exportSchools.forEach(
-      (school, index) => {
-
-        const schoolHasFilledData =
-          checkSchoolHasData(school);
-
-        // ===============================================
-        // FILLED EXPORT
-        // ===============================================
-
-        if (
-          type === "filled" &&
-          !schoolHasFilledData
-        ) {
-          return;
-        }
-
-        // ===============================================
-        // EMPTY EXPORT
-        // ===============================================
-
-        if (
-          type === "empty" &&
-          schoolHasFilledData
-        ) {
-          return;
-        }
-
-        // ===============================================
-        // CLASS 11 + CLASS 12
-        // ===============================================
-
-        [
-          "Class 11",
-          "Class 12",
-        ].forEach((className) => {
-
-          validExportYears.forEach((year) => {
-
-            const classData =
-              school.classes?.[
-                className
-              ]?.[year];
-
-            // =========================================
-            // PRINCIPAL
-            // =========================================
-
-            const principal =
-              getClassPrincipal(
-                school,
-                className
-              );
-
-            // =========================================
-            // REMARK
-            // =========================================
-
-            const classRemark =
-              getClassRemark(
-                school,
-                className
-              );
-
-            // =========================================
-            // BASE ROW
-            // =========================================
-
-            const row = [
-              index + 1,
-              school.code || "",
-              school.schoolName || "",
-              className,
-              year,
-              principal,
-              classRemark,
-            ];
-
-            // =========================================
-            // SUBJECT DATA
-            // =========================================
-
-            exportSubjects.forEach(
-              (subject) => {
-
-                const data =
-                  classData?.[
-                    selectedType
-                  ]?.subjects?.[
-                    subject
-                  ];
-
-                // =======================================
-                // GROUP SUBJECT
-                // =======================================
-
-                if (
-                  data &&
-                  !Array.isArray(data)
-                ) {
-
-                  const mediumNames = [
-                    "English Medium",
-                    "Hindi Medium",
-                  ];
-
-                  mediumNames.forEach((medium) => {
-
-                    const subSubjects =
-                      exportSubjectGroups[
-                        subject
-                      ]?.[medium] || [];
-
-                    subSubjects.forEach((sub) => {
-
-                      const teachers =
-                        data?.[
-                          medium
-                        ]?.[
-                          sub
-                        ] || [];
-
-                      // =================================
-                      // NAME
-                      // =================================
-
-                      const names =
-                        getVerticalValues(
-                          teachers,
-                          "teacherName"
-                        );
-
-                      // =================================
-                      // NUMBER
-                      // =================================
-
-                      const numbers =
-                        getVerticalValues(
-                          teachers,
-                          "number"
-                        );
-
-                      // =================================
-                      // ADD DATA
-                      // =================================
-
-                      row.push(
-                        names,
-                        numbers
-                      );
-
-                    });
-
-                  });
-
-                }
-
-                // =======================================
-                // NORMAL SUBJECT
-                // =======================================
-
-                else {
-
-                  const teachers =
-                    Array.isArray(data)
-                      ? data
-                      : [];
-
-                  const names =
-                    getVerticalValues(
-                      teachers,
-                      "teacherName"
-                    );
-
-                  const numbers =
-                    getVerticalValues(
-                      teachers,
-                      "number"
-                    );
-
-                  row.push(
-                    names,
-                    numbers
-                  );
-
-                }
-
-              }
-            );
-
-            // =========================================
-            // EMPTY EXPORT
-            // =========================================
-
-            if (
-              type === "empty" &&
-              !schoolHasFilledData
-            ) {
-
-              if (
-                !String(
-                  classRemark || ""
-                ).trim()
-              ) {
-                row[6] =
-                  "Pending Book Entry";
-              }
-
-            }
-
-            // =========================================
-            // ADD ROW
-            // =========================================
-
-            rows.push(row);
-
-          });
-
-        });
-
-      }
-    );
-
-    // =====================================================
-    // NO DATA
+    // CHECK RESULT
     // =====================================================
 
     if (rows.length <= 4) {
-
       alert(
         type === "filled"
-          ? `No filled school data found for ${validExportYears.join(
-              ", "
-            )}.`
-          : `No empty school data found for ${validExportYears.join(
-              ", "
-            )}.`
+          ? `No filled school data found for ${validExportYears.join(", ")}.`
+          : `No empty school data found for ${validExportYears.join(", ")}.`
       );
-
       return;
     }
 
     // =====================================================
-    // CREATE SHEET
+    // CREATE WORKSHEET
     // =====================================================
 
-    const sheet =
-      XLSX.utils.aoa_to_sheet(rows);
 
-    // =====================================================
-    // APPLY MERGES
-    // =====================================================
+const sheet = XLSX.utils.aoa_to_sheet(rows);
+
+// School Name column: wrap text and prevent overlap
+sheet["!cols"] = sheet["!cols"] || [];
+sheet["!cols"][2] = {
+  ...sheet["!cols"][2],
+  wch: 30,
+};
+
+// Increase data row height
+sheet["!rows"] = sheet["!rows"] || [];
+
+
+for (let r = 4; r < rows.length; r++) {
+  const cellAddress = XLSX.utils.encode_cell({
+    r,
+    c: 2,
+  });
+
+  if (sheet[cellAddress]) {
+    sheet[cellAddress].s = {
+      ...sheet[cellAddress].s,
+      alignment: {
+        ...sheet[cellAddress].s?.alignment,
+        wrapText: true,
+        vertical: "center",
+      },
+    };
+  }
+
+  sheet["!rows"][r] = {
+    ...sheet["!rows"][r],
+    hpt: 45,
+  };
+}
+
+
 
     sheet["!merges"] = merges;
 
@@ -1303,159 +917,220 @@ const handleExport = (type) => {
     // COLUMN WIDTHS
     // =====================================================
 
-    const totalColumns =
-      colIndex;
+    sheet["!cols"] = Array.from(
+      { length: colIndex },
+      (_, index) => {
+        if (index === 0) return { wch: 8 };
+        if (index === 1) return { wch: 15 };
+        if (index === 2) return { wch: 35 };
+        if (index === 3) return { wch: 13 };
+        if (index === 4) return { wch: 12 };
+        if (index === 5) return { wch: 25 };
+        if (index === 6) return { wch: 30 };
 
-    sheet["!cols"] =
-      Array.from(
-        {
-          length: totalColumns,
-        },
-        (_, index) => {
-
-          // S.No
-          if (index === 0) {
-            return {
-              wch: 8,
-            };
-          }
-
-          // Code
-          if (index === 1) {
-            return {
-              wch: 15,
-            };
-          }
-
-          // School Name
-          if (index === 2) {
-            return {
-              wch: 35,
-            };
-          }
-
-          // Class
-          if (index === 3) {
-            return {
-              wch: 12,
-            };
-          }
-
-          // Year
-          if (index === 4) {
-            return {
-              wch: 10,
-            };
-          }
-
-          // Principal
-          if (index === 5) {
-            return {
-              wch: 25,
-            };
-          }
-
-          // Remarks
-          if (index === 6) {
-            return {
-              wch: 30,
-            };
-          }
-
-          // Name / Number
-          return {
-            wch: 22,
-          };
-
-        }
-      );
-
-    // =====================================================
-    // CELL ALIGNMENT
-    // =====================================================
-
-    Object.keys(sheet).forEach(
-      (cellAddress) => {
-
-        if (
-          cellAddress.startsWith("!")
-        ) {
-          return;
-        }
-
-        const cell =
-          sheet[cellAddress];
-
-        if (!cell) {
-          return;
-        }
-
-        cell.s = {
-          alignment: {
-            wrapText: true,
-            vertical: "center",
-            horizontal: "center",
-          },
-        };
-
+        return { wch: 22 };
       }
     );
 
     // =====================================================
-    // ROW HEIGHT
+    // LIGHT COLOURFUL HEADERS + CENTER ALIGNMENT
     // =====================================================
 
-    sheet["!rows"] =
-      rows.map(
-        (row, rowIndex) => {
+    const headerColors = {
+      common: "DCE6F1",
+      subject: "D9EAD3",
+      english: "DDEBF7",
+      hindi: "FCE4D6",
+      subSubject: "E4DFEC",
+      nameNumber: "FFF2CC",
+    };
 
-          // Header rows
-          if (rowIndex < 4) {
-            return {
-              hpt: 25,
-            };
-          }
+    const borderStyle = {
+      top: { style: "thin", color: { rgb: "B7C9D6" } },
+      bottom: { style: "thin", color: { rgb: "B7C9D6" } },
+      left: { style: "thin", color: { rgb: "B7C9D6" } },
+      right: { style: "thin", color: { rgb: "B7C9D6" } },
+    };
 
-          let maxLines = 1;
-
-          row.forEach(
-            (value) => {
-
-              if (
-                typeof value === "string"
-              ) {
-
-                const lineCount =
-                  value.split("\n").length;
-
-                if (
-                  lineCount > maxLines
-                ) {
-                  maxLines =
-                    lineCount;
-                }
-
-              }
-
+    const applyCellStyle = (
+      cell,
+      {
+        fillColor,
+        bold = false,
+        fontColor = "263238",
+        fontSize = 10,
+      } = {}
+    ) => {
+      cell.s = {
+        alignment: {
+          horizontal: "center",
+          vertical: "center",
+          wrapText: true,
+        },
+        font: {
+          bold,
+          color: { rgb: fontColor },
+          sz: fontSize,
+        },
+        border: borderStyle,
+        ...(fillColor
+          ? {
+              fill: {
+                patternType: "solid",
+                fgColor: { rgb: fillColor },
+              },
             }
-          );
+          : {}),
+      };
+    };
 
-          return {
-            hpt: Math.max(
-              20,
-              maxLines * 18
-            ),
-          };
+    // Common header cells
+    for (let rowIndex = 0; rowIndex < 4; rowIndex++) {
+      for (let col = 0; col < 7; col++) {
+        const address = XLSX.utils.encode_cell({
+          r: rowIndex,
+          c: col,
+        });
 
+        if (sheet[address]) {
+          applyCellStyle(sheet[address], {
+            fillColor: headerColors.common,
+            bold: true,
+            fontSize: 11,
+          });
         }
-      );
+      }
+    }
+
+    // Subject / medium / sub-subject / Name / Number
+    columnDefinitions.forEach((definition) => {
+      const {
+        subject,
+        medium,
+        subSubject,
+        nameCol,
+        numberCol,
+        grouped,
+      } = definition;
+
+      const subjectCell = XLSX.utils.encode_cell({
+        r: 0,
+        c: nameCol,
+      });
+
+      if (sheet[subjectCell]) {
+        applyCellStyle(sheet[subjectCell], {
+          fillColor: headerColors.subject,
+          bold: true,
+          fontSize: 12,
+        });
+      }
+
+      if (grouped) {
+        const mediumCell = XLSX.utils.encode_cell({
+          r: 1,
+          c: nameCol,
+        });
+
+        if (sheet[mediumCell]) {
+          applyCellStyle(sheet[mediumCell], {
+            fillColor:
+              medium === "Hindi Medium"
+                ? headerColors.hindi
+                : headerColors.english,
+            bold: true,
+            fontSize: 11,
+          });
+        }
+
+        const subCell = XLSX.utils.encode_cell({
+          r: 2,
+          c: nameCol,
+        });
+
+        if (sheet[subCell]) {
+          applyCellStyle(sheet[subCell], {
+            fillColor: headerColors.subSubject,
+            bold: true,
+            fontSize: 10,
+          });
+        }
+      }
+
+      [nameCol, numberCol].forEach((col) => {
+        const cellAddress = XLSX.utils.encode_cell({
+          r: 3,
+          c: col,
+        });
+
+        if (sheet[cellAddress]) {
+          applyCellStyle(sheet[cellAddress], {
+            fillColor: headerColors.nameNumber,
+            bold: true,
+            fontSize: 10,
+          });
+        }
+      });
+    });
+
+    // Center-align data rows and add borders.
+    for (let r = 4; r < rows.length; r++) {
+      for (let c = 0; c < colIndex; c++) {
+        const address = XLSX.utils.encode_cell({ r, c });
+
+        if (!sheet[address]) continue;
+
+        sheet[address].s = {
+          alignment: {
+            horizontal: "center",
+            vertical: "center",
+            wrapText: true,
+          },
+          border: borderStyle,
+        };
+      }
+    }
+
+    // =====================================================
+    // ROW HEIGHTS
+    // =====================================================
+
+    sheet["!rows"] = rows.map((row, rowIndex) => {
+      if (rowIndex === 0) return { hpt: 30 };
+      if (rowIndex === 1) return { hpt: 27 };
+      if (rowIndex === 2) return { hpt: 27 };
+      if (rowIndex === 3) return { hpt: 25 };
+
+      let maxLines = 1;
+
+      row.forEach((value) => {
+        if (typeof value === "string") {
+          maxLines = Math.max(maxLines, value.split("\n").length);
+        }
+      });
+
+      return {
+  hpt: Math.max(45, maxLines * 18),
+};
+    });
+
+    // =====================================================
+    // FREEZE HEADER ROWS + COMMON COLUMNS
+    // =====================================================
+
+    sheet["!freeze"] = {
+      xSplit: 7,
+      ySplit: 4,
+      topLeftCell: "H5",
+      activePane: "bottomRight",
+      state: "frozen",
+    };
 
     // =====================================================
     // CREATE WORKBOOK
     // =====================================================
 
-    const wb =
-      XLSX.utils.book_new();
+    const wb = XLSX.utils.book_new();
 
     XLSX.utils.book_append_sheet(
       wb,
@@ -1464,50 +1139,32 @@ const handleExport = (type) => {
     );
 
     // =====================================================
-    // FILE NAME
-    // =====================================================
-
-    const yearText =
-      validExportYears.join("_");
-
-    const fileName =
-      type === "filled"
-        ? `School_Filled_Records_${yearText}.xlsx`
-        : `School_Empty_Records_${yearText}.xlsx`;
-
-    // =====================================================
     // EXPORT FILE
     // =====================================================
 
-    XLSX.writeFile(
-      wb,
-      fileName
-    );
+    const yearText = validExportYears.join("_");
 
-    // =====================================================
-    // SUCCESS
-    // =====================================================
+   
+const classText =
+  selectedExportClass === "both"
+    ? "Class11_12"
+    : `Class${selectedExportClass}`;
+
+const fileName =
+  type === "filled"
+    ? `School_Filled_${classText}_${yearText}.xlsx`
+    : `School_Empty_${classText}_${yearText}.xlsx`;
+
+
+    XLSX.writeFile(wb, fileName);
 
     alert(
-      `${
-        type === "filled"
-          ? "Filled"
-          : "Empty"
-      } records exported for: ${validExportYears.join(
-        ", "
-      )}`
+      `${type === "filled" ? "Filled" : "Empty"} records exported for: ${validExportYears.join(", ")}`
     );
-
   } catch (error) {
+    console.error("Export failed:", error);
 
-    console.error(
-      "Export failed:",
-      error
-    );
-
-    alert(
-      "Export failed. Please check your data."
-    );
+    alert("Export failed. Please check your data.");
   }
 };
 
@@ -2067,72 +1724,69 @@ const addSubSubject = () => {
   // UPDATE SUBJECT GROUPS
   // ==========================================
 
-  setSubjectGroups((prev) => {
-    const updated = structuredClone(prev);
+setSubjectGroups((prev) => {
+  const updated = structuredClone(prev || {});
 
+  // Create main subject if missing
+  if (!updated[main]) {
+    updated[main] = {
+      "English Medium": [],
+      "Hindi Medium": [],
+    };
+  }
 
-    // ========================================
-    // CREATE MAIN SUBJECT ONLY IF NOT EXISTS
-    // ========================================
+  // Keep existing data and normalize arrays
+  ["English Medium", "Hindi Medium"].forEach((medium) => {
+    const existing = updated[main][medium];
 
-    if (!updated[main]) {
-      updated[main] = {
-        "English Medium": [],
-        "Hindi Medium": [],
-      };
+    if (Array.isArray(existing)) {
+      updated[main][medium] = existing;
+    } else if (existing && typeof existing === "object") {
+      // Preserve old object-format subject names
+      updated[main][medium] = Object.keys(existing);
+    } else {
+      updated[main][medium] = [];
     }
-
-
-    // ========================================
-    // MAKE SURE ENGLISH MEDIUM EXISTS
-    // ========================================
-
-    if (!updated[main]["English Medium"]) {
-      updated[main]["English Medium"] = [];
-    }
-
-
-    // ========================================
-    // MAKE SURE HINDI MEDIUM EXISTS
-    // ========================================
-
-    if (!updated[main]["Hindi Medium"]) {
-      updated[main]["Hindi Medium"] = [];
-    }
-
-
-    // ========================================
-    // ADD ENGLISH SUB SUBJECTS
-    // ========================================
-
-    englishList.forEach((sub) => {
-
-      if (
-        !updated[main]["English Medium"].includes(sub)
-      ) {
-        updated[main]["English Medium"].push(sub);
-      }
-
-    });
-
-
-    // ========================================
-    // ADD HINDI SUB SUBJECTS
-    // ========================================
-
-    hindiList.forEach((sub) => {
-
-      if (
-        !updated[main]["Hindi Medium"].includes(sub)
-      ) {
-        updated[main]["Hindi Medium"].push(sub);
-      }
-
-    });
-
-
-    return updated;
   });
+
+  // Add English sub-subjects
+  englishList.forEach((sub) => {
+    const name = sub.trim();
+
+    if (
+      name &&
+      !updated[main]["English Medium"].some(
+        (item) =>
+          item.toLowerCase() === name.toLowerCase()
+      )
+    ) {
+      updated[main]["English Medium"].push(name);
+    }
+  });
+
+  // Add Hindi sub-subjects
+  hindiList.forEach((sub) => {
+    const name = sub.trim();
+
+    if (
+      name &&
+      !updated[main]["Hindi Medium"].some(
+        (item) =>
+          item.toLowerCase() === name.toLowerCase()
+      )
+    ) {
+      updated[main]["Hindi Medium"].push(name);
+    }
+  });
+
+  console.log(
+    "UPDATED SUBJECT GROUP:",
+    JSON.stringify(updated[main], null, 2)
+  );
+
+  return updated;
+});
+
 
 
   // ==========================================
@@ -2275,7 +1929,7 @@ const addSubSubject = () => {
       return updated;
     })
   );
-};
+};                                                                                                                                                                                                                
 
   return (
 
@@ -2362,13 +2016,14 @@ const addSubSubject = () => {
     bg-white
     px-6
     py-3
-    font-semibold
+    font-bold
     text-slate-900
     shadow-lg
     transition-all
     duration-300
     hover:-translate-y-1
     hover:shadow-2xl
+    text-2xl
   "
   onClick={addSubSubject}
 >
@@ -2377,7 +2032,7 @@ const addSubSubject = () => {
 
             <button
 onClick={() => handleExport("filled")}
-className="bg-green-600 text-white px-5 py-3 rounded-xl"
+className="bg-green-600 text-white px-5 py-3 rounded-xl text-2xl font-bold"
 >
 Export Filled
 </button>
@@ -2385,7 +2040,9 @@ Export Filled
   disabled
   className="
     bg-gray-400
-    text-gray-200
+    text-black
+    font-bold
+    text-2xl
     px-5
     py-3
     rounded-xl
@@ -2407,7 +2064,8 @@ Export Filled
     bg-white/10
     px-6
     py-3
-    font-semibold
+    font-bold
+    text-2xl
     text-white
     backdrop-blur-xl
     transition-all
@@ -2492,10 +2150,20 @@ Export Filled
   {/* ADD YEAR */}
   <button
     onClick={handleAddYear}
-    className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
+    className=" text-black font-bold text-2xl px-5 py-2 rounded-lg "
   >
     + Add Year
   </button>
+
+    <select
+  className="text-xl font-bold p-2 rounded-lg border border-gray-300"
+  value={selectedExportClass}
+  onChange={(e) => setSelectedExportClass(e.target.value)}
+>
+  <option value="11">Class 11</option>
+  <option value="12">Class 12</option>
+  <option value="both">Both Classes (11 + 12)</option>
+</select>
 
   {/* EXPORT YEAR */}
   {/* ================= EXPORT YEAR ================= */}
@@ -2507,11 +2175,12 @@ Export Filled
         list-none
         cursor-pointer
         rounded-lg
-        bg-blue-600
+        text-2xl
+        font-bold
         px-5
         py-2
-        text-white
-        hover:bg-blue-700
+        text-black
+      
         select-none
         flex
         items-center
@@ -2521,6 +2190,8 @@ Export Filled
       Export Year
       <span>▼</span>
     </summary>
+
+  
 
     {/* DROPDOWN */}
     <div
@@ -2552,7 +2223,7 @@ Export Filled
             rounded-lg
             px-3
             py-2
-            text-slate-800
+            text-black
             hover:bg-slate-100
           "
         >
