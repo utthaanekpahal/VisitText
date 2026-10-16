@@ -167,89 +167,147 @@ useEffect(() => {
 // SUBJECT GROUPS
 // ======================================================
 
+
 const [subjectGroups, setSubjectGroups] = useState(() => {
   try {
     const saved = localStorage.getItem("schoolSubjectGroups");
 
-    return saved
-      ? JSON.parse(saved)
-      : {
-          Science: {
-            "English Medium": [
-              "Chemistry",
-              "Physics",
-              "Biology",
-              "Mathematics",
-            ],
-            "Hindi Medium": [
-              "रसायन",
-              "भौतिक",
-              "जीव विज्ञान",
-              "गणित",
-            ],
-          },
+    const defaultGroups = {
+      Science: {
+        "English Medium": [
+          "Chemistry",
+          "Physics",
+          "Biology",
+          "Mathematics",
+        ],
+        "Hindi Medium": [
+          "रसायन",
+          "भौतिक",
+          "जीव विज्ञान",
+          "गणित",
+        ],
+      },
 
-          Commerce: {
-            "English Medium": [
-              "Accounts",
-              "Business Studies",
-              "Economics",
-            ],
-            "Hindi Medium": [
-              "लेखाशास्त्र",
-              "व्यवसाय अध्ययन",
-              "अर्थशास्त्र",
-            ],
-          },
+      Commerce: {
+        "English Medium": [
+          "Accounts",
+          "Business Studies",
+          "Economics",
+        ],
+        "Hindi Medium": [
+          "लेखाशास्त्र",
+          "व्यवसाय अध्ययन",
+          "अर्थशास्त्र",
+        ],
+      },
 
-          Arts: {
-            "English Medium": [
-              "Political Science",
-              "Geography",
-              "History",
-              "Economics",
-              "Sociology",
-            ],
-            "Hindi Medium": [
-              "राजनीति विज्ञान",
-              "भूगोल",
-              "इतिहास",
-              "अर्थशास्त्र",
-              "समाजशास्त्र",
-            ],
-          },
+      Arts: {
+        "English Medium": [
+          "Political Science",
+          "Geography",
+          "History",
+          "Economics",
+          "Sociology",
+        ],
+        "Hindi Medium": [
+          "राजनीति विज्ञान",
+          "भूगोल",
+          "इतिहास",
+          "अर्थशास्त्र",
+          "समाजशास्त्र",
+        ],
+      },
 
-          Agriculture: {
-            "English Medium": [
-              "Horticulture",
-              "Animal Husbandry",
-              "Crop Production",
-            ],
-          
-  "Hindi Medium": [
-    "कृषि विज्ञान",
-    "पशु विज्ञान",
-    "फसल विज्ञान",
-            ],
-          },
+      Agriculture: {
+        "English Medium": [
+          "Horticulture",
+          "Animal Husbandry",
+          "Crop Production",
+        ],
+        "Hindi Medium": [
+          "कृषि विज्ञान",
+          "पशु विज्ञान",
+          "फसल विज्ञान",
+        ],
+      },
 
-          Bharti: {
-            "English Medium": [
-              "Hindi",
-              "English",
-              "Sanskrit",
-            ],
-            "Hindi Medium": [
-              "हिंदी",
-              "अंग्रेज़ी",
-              "संस्कृत",
-            ],
-          },
+      Bharti: {
+        "English Medium": [
+          "Hindi",
+          "English",
+          "Sanskrit",
+        ],
+        "Hindi Medium": [
+          "हिंदी",
+          "अंग्रेज़ी",
+          "संस्कृत",
+        ],
+      },
+    };
+
+    const hindiMap = {
+      Rasayan: "रसायन",
+      Bhautik: "भौतिक",
+      "Jeev Vigyan": "जीव विज्ञान",
+      Ganit: "गणित",
+      Lekhashastra: "लेखाशास्त्र",
+      "Vyavsay Adhyayan": "व्यवसाय अध्ययन",
+      Arthashastra: "अर्थशास्त्र",
+      "Bahi Khata": "बही खाता",
+      "Rajneeti Vigyan": "राजनीति विज्ञान",
+      Bhugol: "भूगोल",
+      Itihas: "इतिहास",
+      Samajshastra: "समाजशास्त्र",
+      "krishi vigyan": "कृषि विज्ञान",
+      Pashupalan: "पशु विज्ञान",
+      "Fasal Utpadan": "फसल विज्ञान",
+      Hindi: "हिंदी",
+      Angrezi: "अंग्रेज़ी",
+      Sanskrit: "संस्कृत",
+    };
+
+    if (!saved) {
+      return defaultGroups;
+    }
+
+    const parsed = JSON.parse(saved);
+    const updated = { ...defaultGroups };
+
+    // Keep existing subjects and custom groups
+    Object.keys(parsed).forEach((subject) => {
+      updated[subject] = {
+        ...(defaultGroups[subject] || {}),
+        ...parsed[subject],
+      };
+    });
+
+    // Convert only Hindi Medium names
+    Object.keys(updated).forEach((subject) => {
+      const groups = updated[subject];
+      const hindiSubjects = groups?.["Hindi Medium"];
+
+      if (Array.isArray(hindiSubjects)) {
+        updated[subject] = {
+          ...groups,
+          "Hindi Medium": hindiSubjects.map(
+            (name) => hindiMap[name] || name
+          ),
         };
-  } catch {
+      }
+    });
+
+    localStorage.setItem(
+      "schoolSubjectGroups",
+      JSON.stringify(updated)
+    );
+
+    return updated;
+  } catch (error) {
+    console.error("Error loading subject groups:", error);
     return {};
   }
 });
+
 
 
 // SAVE SUBJECT GROUPS
