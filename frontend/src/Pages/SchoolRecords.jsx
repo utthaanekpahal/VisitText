@@ -696,11 +696,7 @@ const classNames = exportClassNames;
       });
     };
 
-    // =====================================================
-    // DETERMINE WHICH SUBJECT COLUMNS CONTAIN DATA
-    // FILLED EXPORT: ONLY EXPORT SUBJECTS WITH DATA
-    // EMPTY EXPORT: KEEP ALL SUBJECTS FOR DATA ENTRY
-    // =====================================================
+   
 
     const activeSubjects = exportSubjects.filter((subject) => {
       if (type === "empty") return true;
@@ -1705,9 +1701,7 @@ const subjectsData =
 
 
 const addSubSubject = () => {
-  // ==========================================
-  // STEP 1: MAIN SUBJECT
-  // ==========================================
+  
 
   const mainSubject = prompt("Enter Main Subject");
 
@@ -1991,14 +1985,14 @@ setSubjectGroups((prev) => {
 
   return (
 
-    <div className="min-h-screen bg-slate-100 p-8 space-y-8">
+   <div className="min-h-screen bg-slate-100 p-8 space-y-8">
 
 
       {/* ================= HEADER ================= */}
 
 
       {/* BLUE HEADER */}
-  <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 p-10 shadow-2xl">
+  <div className="relative  rounded-[32px] bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 p-10 shadow-2xl">
 
 
 
@@ -2203,7 +2197,7 @@ Export Filled
 
       </div>
 
-<div className="flex items-center gap-3">
+<div className="relative z-[10000] flex flex-wrap items-center gap-3">
 
   {/* ADD YEAR */}
   <button
@@ -2225,84 +2219,38 @@ Export Filled
 
   {/* EXPORT YEAR */}
   {/* ================= EXPORT YEAR ================= */}
-<div className="relative z-[9999]">
-  <details className="relative z-[9999]">
 
-    <summary
-      className="
-        list-none
-        cursor-pointer
-        rounded-lg
-        text-2xl
-        font-bold
-        px-5
-        py-2
-        text-black
-      
-        select-none
-        flex
-        items-center
-        gap-2
-      "
-    >
+<div className="relative z-[300]">
+  <details className="group relative">
+
+    <summary className="flex cursor-pointer list-none items-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2 text-base font-semibold text-black">
       Export Year
-      <span>▼</span>
+
+      <span className="text-xs transition-transform group-open:rotate-180">
+        ▼
+      </span>
     </summary>
 
-  
-
-    {/* DROPDOWN */}
-    <div
-      className="
-        absolute
-        left-0
-        top-full
-        mt-2
-        z-[99999]
-        w-48
-        rounded-xl
-        border
-        border-slate-200
-        bg-white
-        p-3
-        shadow-2xl
-      "
-    >
-
-      {/* YEARS */}
+    <div className="absolute left-0 top-full z-[9999] mt-2 flex max-h-64 w-56 flex-col overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-2xl">
       {years.map((year) => (
         <label
           key={year}
-          className="
-            flex
-            cursor-pointer
-            items-center
-            gap-3
-            rounded-lg
-            px-3
-            py-2
-            text-black
-            hover:bg-slate-100
-          "
+          className="flex shrink-0 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-black hover:bg-slate-100"
         >
           <input
             type="checkbox"
             checked={selectedExportYears.includes(year)}
             onChange={() => toggleExportYear(year)}
-            className="h-4 w-4 cursor-pointer"
+            className="h-4 w-4 shrink-0 cursor-pointer accent-blue-600"
           />
 
-          <span className="font-medium">
-            {year}
-          </span>
+          <span className="font-medium">{year}</span>
         </label>
       ))}
-
     </div>
 
   </details>
 </div>
-
 </div>
       {/* ================= TABLE ================= */}
 

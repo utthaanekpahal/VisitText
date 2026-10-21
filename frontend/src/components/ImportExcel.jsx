@@ -101,15 +101,7 @@ export default function ImportExcel({
           return;
         }
 
-        /*
-          Excel structure:
-
-          Row 1 -> Subject
-          Row 2 -> Medium
-          Row 3 -> Sub Subject
-          Row 4 -> Name / Number
-          Row 5 onwards -> School data
-        */
+      
 
         const subjectRow = rows[0] || [];
         const mediumRow = rows[1] || [];
@@ -467,17 +459,7 @@ export default function ImportExcel({
               }
             }
 
-            // -----------------------------------
-            // VERY IMPORTANT
-            //
-            // School is pushed even when:
-            // Name = empty
-            // Number = empty
-            //
-            // So code + school name will still
-            // appear after import.
-            // -----------------------------------
-
+          
             formattedData.push(school);
           }
         );

@@ -377,11 +377,11 @@ const filteredSchools = schools.filter((school) => {
   };
 
   return (
-    <div className="mt-8 w-full overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-xl">
+    <div className="mt-8 w-full overflow-visible rounded-2xl border border-gray-300 bg-white shadow-xl">
 
       {/* ================= SEARCH ================= */}
 
-<div className="sticky top-0 z-50 p-5 border-b bg-gray-50 flex justify-between items-center">
+<div className="relative z-[200] p-5 border-b bg-gray-50 flex justify-between items-center">
   <div className="flex gap-3">
 <input
   type="text"
@@ -540,11 +540,11 @@ const filteredSchools = schools.filter((school) => {
 </div>
 
   <div className="w-full overflow-auto max-h-[70vh]">
-  <table className="relative w-full min-w-[1800px] border-collapse">
+  <table className="relative w-full min-w-[1800px] border-separate border-spacing-0">
 
           {/* ================= HEADER ================= */}
 
-         <thead className="sticky top-0 z-50">
+        <thead className="sticky top-0 z-50 [isolation:isolate]">
 
   {/* Row 1 */}
  <tr className="bg-[#ece5d8]">
@@ -552,13 +552,14 @@ const filteredSchools = schools.filter((school) => {
   <th
     rowSpan={4}
     className="
-      sticky left-0 top-0 z-[100]
-      min-w-[30px]
-      border border-black 
-      bg-white
-      text-center
-      text-xl 
-    "
+  sticky left-0 top-0 z-[100]
+  min-w-[70px]
+  border border-black
+  bg-white
+  text-center text-xl
+  [background-clip:padding-box]
+  shadow-[1px_0_0_#000,0_1px_0_#000]
+"
   >
     S.No.
   </th>
@@ -568,13 +569,14 @@ const filteredSchools = schools.filter((school) => {
   <th
     rowSpan={4}
     className="
-      sticky left-[70px] top-0 z-[100]
-      min-w-[140px]
-      border border-black
-      bg-white
-      text-center
-      text-xl                                                                                                                                   
-    "
+  sticky left-[70px] top-0 z-[100]
+  min-w-[140px]
+  border border-black
+  bg-white
+  text-center text-xl
+  [background-clip:padding-box]
+  shadow-[1px_0_0_#000,0_1px_0_#000]
+"
   >
     Code
   </th>
@@ -584,13 +586,14 @@ const filteredSchools = schools.filter((school) => {
   <th
     rowSpan={4}
     className="
-      sticky left-[140px] top-0 z-[100]
-      min-w-[250px]
-      border border-black
-      bg-white
-      text-center
-      text-xl
-    "
+  sticky left-[210px] top-0 z-[100]
+  min-w-[250px]
+  border border-black
+  bg-white
+  text-center text-xl
+  [background-clip:padding-box]
+  shadow-[1px_0_0_#000,0_1px_0_#000]
+"
   >
     School Name
   </th>
@@ -835,20 +838,37 @@ if (subjectGroups[subject]) {
 
      
 
-      <th
-        key={`${subject}-${medium}-${sub}-name`}
-        className="border border-black text-center text-xl"
-      >
-        Name
-      </th>,
+    <th
+  key={`${subject}-${medium}-${sub}-name`}
+  className="
+    relative
+    z-[20]
+    min-w-[170px]
+    border border-black
+    bg-[#f7f3eb]
+    px-3 py-2
+    text-center text-xl
+    whitespace-nowrap
+  "
+>
+  Name
+</th>,
 
-      <th
-        key={`${subject}-${medium}-${sub}-number`}
-        className="border border-black  text-center text-xl"
-      >
-        Number
-      </th>
-
+<th
+  key={`${subject}-${medium}-${sub}-number`}
+  className="
+    relative
+    z-[20]
+    min-w-[120px]
+    border border-black
+    bg-[#f7f3eb]
+    px-3 py-2
+    text-center text-xl
+    whitespace-nowrap
+  "
+>
+  Number
+</th>
     ]);
 
   });
@@ -1054,79 +1074,73 @@ const isLastSchoolRow =
     <>
    
 
+
+{/* ================= S.NO ================= */}
 <td
   rowSpan={totalSchoolRows}
   className="
     sticky left-0 z-[40]
+    box-border
+    min-w-[70px] w-[70px]
     bg-white
-    border border-bl
+    border border-black
     p-3
-    text-center
-    align-top
-    min-w-[140px]
-    w-[140px]
+    text-center align-top text-xl
+    [background-clip:padding-box]
+    shadow-[1px_0_0_#000]
   "
 >
   {startIndex + schoolIndex + 1}
 </td>
 
-
-
-
+{/* ================= CODE ================= */}
 <td
   rowSpan={totalSchoolRows}
   className="
     sticky left-[70px] z-[40]
+    box-border
+    min-w-[140px] w-[140px]
     bg-white
     border border-black
     p-3
-    text-center
-    align-top
-    min-w-[70px]
-    w-[70px]
-    text-xl
+    text-center align-top text-xl
+    [background-clip:padding-box]
+    shadow-[1px_0_0_#000]
   "
 >
   {school.code}
 </td>
 
-
 {/* ================= SCHOOL NAME ================= */}
-
 <td
   rowSpan={totalSchoolRows}
   className="
-    sticky left-[140px] z-[40]
+    sticky left-[210px] z-[40]
+    box-border
+    min-w-[250px] w-[250px]
     bg-white
     border border-black
-    px-6 py-5
-    min-w-[250px]
-    w-[250px]
-    align-
-    text-xl
+    px-4 py-5
+    align-top text-xl
+    [background-clip:padding-box]
+    shadow-[1px_0_0_#000]
   "
 >
-  <div className="flex justify-between items-start gap-3">
-
-    <span className="break-words">
+  <div className="flex items-start justify-between gap-3">
+    <span className="min-w-0 flex-1 break-words">
       {school.schoolName}
     </span>
 
     <button
-      onClick={() =>
-        handleDeleteSchool(originalIndex)
-      }
-      className="
-        shrink-0
-        text-red-600
-        hover:text-red-800
-      "
+      type="button"
+      onClick={() => handleDeleteSchool(originalIndex)}
+      className="shrink-0 text-red-600 hover:text-red-800"
     >
       <FiTrash2 />
     </button>
-
   </div>
 </td>
+
     </>
 )}
                       </>
