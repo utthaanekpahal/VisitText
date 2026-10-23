@@ -698,8 +698,8 @@ const classNames = exportClassNames;
 
    
 
-    const activeSubjects = exportSubjects.filter((subject) => {
-      if (type === "empty") return true;
+ const activeSubjects = exportSubjects.filter((subject) => {
+  if (type === "empty" || type === "all") return true;
 
       return exportSchools.some((school) =>
         classNames.some((className) =>
@@ -912,15 +912,17 @@ const classNames = exportClassNames;
     // =====================================================
     // CHECK RESULT
     // =====================================================
+if (rows.length <= 4) {
+  const message =
+    type === "filled"
+      ? "No filled school data found"
+      : type === "empty"
+      ? "No empty school data found"
+      : "No school records found";
 
-    if (rows.length <= 4) {
-      alert(
-        type === "filled"
-          ? `No filled school data found for ${validExportYears.join(", ")}.`
-          : `No empty school data found for ${validExportYears.join(", ")}.`
-      );
-      return;
-    }
+  alert(`${message} for ${validExportYears.join(", ")}.`);
+  return;
+}
 
     // =====================================================
     // CREATE WORKSHEET
@@ -1207,14 +1209,21 @@ const classText =
 const fileName =
   type === "filled"
     ? `School_Filled_${classText}_${yearText}.xlsx`
-    : `School_Empty_${classText}_${yearText}.xlsx`;
-
+    : type === "empty"
+    ? `School_Empty_${classText}_${yearText}.xlsx`
+    : `School_All_${classText}_${yearText}.xlsx`;
 
     XLSX.writeFile(wb, fileName);
+const exportLabel =
+  type === "filled"
+    ? "Filled"
+    : type === "empty"
+    ? "Empty"
+    : "All";
 
-    alert(
-      `${type === "filled" ? "Filled" : "Empty"} records exported for: ${validExportYears.join(", ")}`
-    );
+alert(
+  `${exportLabel} records exported for: ${validExportYears.join(", ")}`
+);
   } catch (error) {
     console.error("Export failed:", error);
 
@@ -1840,12 +1849,6 @@ setSubjectGroups((prev) => {
 });
 
 
-
-  // ==========================================
-  // ADD MAIN SUBJECT TO HEADER
-  // ONLY IF NEW
-  // ==========================================
-
   if (isNewMainSubject) {
 
     setSubjects((prev) => {
@@ -2104,6 +2107,14 @@ Export Filled
 >
   Export Empty
 </button>
+
+<button
+  onClick={() => handleExport("all")}
+  className="rounded-lg bg-pink-600 px-4 py-2 text-white text-2xl font-bold"
+>
+  Export All
+</button>
+
    <button
   className="
     group
@@ -2212,6 +2223,7 @@ Export Filled
   value={selectedExportClass}
   onChange={(e) => setSelectedExportClass(e.target.value)}
 >
+  <option value="">Export Class</option>
   <option value="11">Class 11</option>
   <option value="12">Class 12</option>
   <option value="both">Both Classes (11 + 12)</option>
@@ -2223,7 +2235,7 @@ Export Filled
 <div className="relative z-[300]">
   <details className="group relative">
 
-    <summary className="flex cursor-pointer list-none items-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2 text-base font-semibold text-black">
+    <summary className="flex cursor-pointer list-none items-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2  text-black text-2xl font-bold">
       Export Year
 
       <span className="text-xs transition-transform group-open:rotate-180">
@@ -2235,7 +2247,7 @@ Export Filled
       {years.map((year) => (
         <label
           key={year}
-          className="flex shrink-0 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-black hover:bg-slate-100"
+          className="flex shrink-0 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-xl text-black hover:bg-slate-100"
         >
           <input
             type="checkbox"

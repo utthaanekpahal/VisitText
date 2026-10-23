@@ -28,13 +28,33 @@ export default function SchoolTable({
  
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
-
+const [editingSchoolId, setEditingSchoolId] = useState(null);
+const [editedSchoolCode, setEditedSchoolCode] = useState("");
+const [editingSchoolNameIndex, setEditingSchoolNameIndex] = useState(null);
+const [editedSchoolName, setEditedSchoolName] = useState("");
 const [selectedSubject, setSelectedSubject] = useState("All");
 const [selectedYears, setSelectedYears] = useState(
   years.length > 0 ? [years[0]] : []
 );
 const [selectedMedium, setSelectedMedium] = useState("All");
 const [selectedClass, setSelectedClass] = useState("All");
+const [selectedSchools, setSelectedSchools] = useState([]);
+
+
+const saveSchoolField = (schoolIndex, field, value) => {
+  const updatedSchools = schools.map((school, index) =>
+    index === schoolIndex
+      ? { ...school, [field]: value }
+      : school
+  );
+
+  setSchools(updatedSchools);
+
+  localStorage.setItem(
+    "schoolRecords",
+    JSON.stringify(updatedSchools)
+  );
+};
 
 useEffect(() => {
   if (years.length > 0) {
@@ -376,6 +396,8 @@ const filteredSchools = schools.filter((school) => {
     handleDeleteSchool(schoolIndex);
   };
 
+  
+
   return (
     <div className="mt-8 w-full overflow-visible rounded-2xl border border-gray-300 bg-white shadow-xl">
 
@@ -391,7 +413,7 @@ const filteredSchools = schools.filter((school) => {
     setSearch(e.target.value);
     setCurrentPage(1);
   }}
-  className="w-96 rounded-lg border border-gray-300 px-4 py-2"
+  className="w-96 rounded-lg border border-blue-900 px-4 py-2"
 />
     
 
@@ -402,7 +424,7 @@ const filteredSchools = schools.filter((school) => {
     setSelectedSubject(e.target.value);
     setCurrentPage(1);
   }}
-  className="rounded-lg border border-gray-300 px-4 py-2"
+  className="rounded-lg border border-blue-900 px-4 py-2 text-xl"
 >
   <option value="All">All Subjects</option>
 
@@ -418,7 +440,7 @@ const filteredSchools = schools.filter((school) => {
     setSelectedMedium(e.target.value);
     setCurrentPage(1);
   }}
-  className="rounded-lg border border-gray-300 px-4 py-2"
+  className="rounded-lg border border-blue-900 px-4 py-2 text-xl"
 >
   <option value="All">All Mediums</option>
 
@@ -434,7 +456,7 @@ const filteredSchools = schools.filter((school) => {
     setSelectedClass(e.target.value);
     setCurrentPage(1);
   }}
-  className="rounded-lg border border-gray-300 px-4 py-2"
+  className="rounded-lg border-2  border-blue-800 px-4 py-2 text-xl"
 >
   <option value="All">All Classes</option>
   <option value="Class 11">Class 11</option>
@@ -443,8 +465,14 @@ const filteredSchools = schools.filter((school) => {
 
 <select
   value={selectedType}
-  onChange={(e) => setSelectedType(e.target.value)}
+  onChange={(e) => {
+    setSelectedType(e.target.value);
+    setCurrentPage(1);
+  }}
+  className="rounded-lg border-2 border-blue-800 px-4 py-2 text-xl"
 >
+  <option value="All">Select Tittle</option>
+
   {BOOK_TYPES.map((type) => (
     <option key={type} value={type}>
       {type}
@@ -459,9 +487,9 @@ const filteredSchools = schools.filter((school) => {
         list-none
         cursor-pointer
         rounded-lg
-        border border-gray-300
+        border border-blue-900
         bg-white
-        px-4 py-2
+        px-4 py-4
         min-w-[180px]
         max-w-[250px]
         flex
@@ -471,6 +499,8 @@ const filteredSchools = schools.filter((school) => {
         select-none
         relative
         z-[101]
+text-xl
+
       "
     >
       <span className="truncate">
@@ -481,7 +511,7 @@ const filteredSchools = schools.filter((school) => {
           : selectedYears.join(" + ")}
       </span>
 
-      <span className="text-gray-500 shrink-0">
+      <span className="text-black  shrink-0">
         ▼
       </span>
     </summary>
@@ -496,7 +526,7 @@ const filteredSchools = schools.filter((school) => {
         w-48
         rounded-lg
         border
-        border-gray-200
+        border-blue-900
         bg-white
         p-3
         shadow-2xl
@@ -513,7 +543,9 @@ const filteredSchools = schools.filter((school) => {
             rounded
             px-2
             py-2
+            
             hover:bg-slate-100
+
           "
         >
           <input
@@ -533,21 +565,73 @@ const filteredSchools = schools.filter((school) => {
 </div>
   </div>
 
+  
+
+<button
+  type="button"
+  disabled={selectedSchools.length === 0}
+  onClick={() => {
+    const count = selectedSchools.length;
+
+    if (count === 0) {
+      alert("Please select at least one school.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${count} selected school(s)?`
+    );
+
+    if (!confirmed) return;
+
+    setSchools((prev) =>
+      prev.filter(
+        (school) => !selectedSchools.includes(school.id)
+      )
+    );
+
+    setSelectedSchools([]);
+
+    alert(`${count} selected school(s) deleted successfully.`);
+  }}
+  className="rounded bg-red-600 px-4 py-2 text-white text-xl font-bold disabled:cursor-not-allowed disabled:opacity-50"
+>
+  Delete Selected School ({selectedSchools.length})
+</button>
+
+
+
   <span className="text-black font-medium">
     Total: {filteredSchools.length} School(s)
   </span>
 
 </div>
 
+
   <div className="w-full overflow-auto max-h-[70vh]">
   <table className="relative w-full min-w-[1800px] border-separate border-spacing-0">
 
           {/* ================= HEADER ================= */}
+          
 
         <thead className="sticky top-0 z-50 [isolation:isolate]">
 
   {/* Row 1 */}
  <tr className="bg-[#ece5d8]">
+  
+
+<th
+  rowSpan={4}
+  className="
+    sticky left-0 top-0 z-[100]
+    min-w-[60px] w-[60px]
+    border border-black
+    bg-white
+    text-center
+  "
+>
+  Action
+</th>
 
   <th
     rowSpan={4}
@@ -1075,7 +1159,39 @@ const isLastSchoolRow =
    
 
 
+{/* ================= ACTION CHECKBOX ================= */}
+
+<td
+  rowSpan={totalSchoolRows}
+  className="
+    sticky left-0 z-[40]
+    min-w-[60px] w-[60px]
+    border border-black
+    bg-white
+    p-3
+    text-center align-top
+  "
+>
+  <input
+    type="checkbox"
+    checked={selectedSchools.includes(school.id)}
+    onChange={(e) => {
+      setSelectedSchools((prev) =>
+        e.target.checked
+          ? prev.includes(school.id)
+            ? prev
+            : [...prev, school.id]
+          : prev.filter((id) => id !== school.id)
+      );
+    }}
+    className="h-5 w-5 cursor-pointer"
+    title="Select school"
+  />
+</td>
+
+
 {/* ================= S.NO ================= */}
+
 <td
   rowSpan={totalSchoolRows}
   className="
@@ -1108,10 +1224,53 @@ const isLastSchoolRow =
     shadow-[1px_0_0_#000]
   "
 >
-  {school.code}
+  {editingSchoolId === school.id ? (
+    <input
+      autoFocus
+      value={editedSchoolCode}
+      onChange={(e) =>
+        setEditedSchoolCode(e.target.value)
+      }
+      onBlur={() => {
+        setSchools((prev) =>
+          prev.map((s) =>
+            s.id === school.id
+              ? {
+                  ...s,
+                  code: editedSchoolCode.trim() || s.code,
+                }
+              : s
+          )
+        );
+        setEditingSchoolId(null);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.currentTarget.blur();
+        }
+
+        if (e.key === "Escape") {
+          setEditingSchoolId(null);
+        }
+      }}
+      className="w-full bg-transparent text-center outline-none"
+    />
+  ) : (
+    <span
+      onClick={() => {
+        setEditingSchoolId(school.id);
+        setEditedSchoolCode(school.code);
+      }}
+      className="cursor-text"
+    >
+      {school.code}
+    </span>
+  )}
 </td>
 
 {/* ================= SCHOOL NAME ================= */}
+
+
 <td
   rowSpan={totalSchoolRows}
   className="
@@ -1127,19 +1286,62 @@ const isLastSchoolRow =
   "
 >
   <div className="flex items-start justify-between gap-3">
-    <span className="min-w-0 flex-1 break-words">
-      {school.schoolName}
-    </span>
+    {editingSchoolNameIndex === originalIndex ? (
+      <input
+        autoFocus
+        type="text"
+        value={editedSchoolName}
+        onChange={(e) => setEditedSchoolName(e.target.value)}
+        onBlur={() => {
+          const newName = editedSchoolName.trim();
+
+          if (newName) {
+            setSchools((prev) =>
+              prev.map((s, i) =>
+                i === originalIndex
+                  ? { ...s, schoolName: newName }
+                  : s
+              )
+            );
+          }
+
+          setEditingSchoolNameIndex(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.currentTarget.blur();
+          }
+
+          if (e.key === "Escape") {
+            setEditingSchoolNameIndex(null);
+          }
+        }}
+        className="min-w-0 flex-1 w-full border-none outline-none bg-transparent"
+      />
+    ) : (
+      <span
+        onClick={() => {
+          setEditingSchoolNameIndex(originalIndex);
+          setEditedSchoolName(school.schoolName);
+        }}
+        className="min-w-0 flex-1 break-words cursor-text"
+      >
+        {school.schoolName}
+      </span>
+    )}
 
     <button
       type="button"
       onClick={() => handleDeleteSchool(originalIndex)}
       className="shrink-0 text-red-600 hover:text-red-800"
+      title="Delete school"
     >
       <FiTrash2 />
     </button>
   </div>
 </td>
+
+
 
     </>
 )}
@@ -1554,6 +1756,7 @@ if (subjectGroups[subject]) {
   )}
 
 </tbody>
+
         </table>
       </div>
 
@@ -1582,5 +1785,6 @@ if (subjectGroups[subject]) {
       </div>
 
     </div>
+    
   );
 }
