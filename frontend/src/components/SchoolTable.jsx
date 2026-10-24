@@ -25,7 +25,7 @@ export default function SchoolTable({
   handleDeleteMedium,
   handleDeleteSubSubject,
 }) {
- 
+ const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
 const [editingSchoolId, setEditingSchoolId] = useState(null);
@@ -350,8 +350,9 @@ const handleEditSubSubject = (
 
 
 
-  const rowsPerPage = 5;
 
+
+// ================= SEARCH FILTER =================
 // ================= SEARCH FILTER =================
 const filteredSchools = schools.filter((school) => {
   const searchText = search.trim().toLowerCase();
@@ -366,29 +367,30 @@ const filteredSchools = schools.filter((school) => {
 
   return nameMatch || codeMatch;
 });
-  // Pagination
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredSchools.length / rowsPerPage)
+
+// ================= PAGINATION =================
+const totalPages = Math.max(
+  1,
+  Math.ceil(filteredSchools.length / itemsPerPage)
+);
+
+useEffect(() => {
+  setCurrentPage((prevPage) =>
+    Math.min(Math.max(prevPage, 1), totalPages)
   );
+}, [totalPages]);
 
-  useEffect(() => {
-    setCurrentPage((prevPage) =>
-      Math.min(Math.max(prevPage, 1), totalPages)
-    );
-  }, [totalPages]);
+const safeCurrentPage = Math.min(
+  Math.max(currentPage, 1),
+  totalPages
+);
 
-  const safeCurrentPage = Math.min(
-    Math.max(currentPage, 1),
-    totalPages
-  );
+const startIndex = (safeCurrentPage - 1) * itemsPerPage;
 
-  const startIndex = (safeCurrentPage - 1) * rowsPerPage;
-
-  const currentSchools = filteredSchools.slice(
-    startIndex,
-    startIndex + rowsPerPage
-  );
+const currentSchools = filteredSchools.slice(
+  startIndex,
+  startIndex + itemsPerPage
+);
 
   const onDeleteSchool = (schoolIndex) => {
     if (typeof handleDeleteSchool !== "function") return;
@@ -1552,6 +1554,7 @@ if (subjectGroups[subject]) {
           </td>
 
         </React.Fragment>
+        
       );
 
     })
@@ -1762,28 +1765,63 @@ if (subjectGroups[subject]) {
 
       {/* ================= PAGINATION ================= */}
 
-      <div className="flex justify-center items-center gap-3 p-5 bg-gray-50">
-        <button
-          disabled={safeCurrentPage === 1}
-          onClick={() => setCurrentPage((prev) => prev - 1)}
-          className="px-4 py-2 rounded-lg bg-gray-200 disabled:opacity-50"
-        >
-          Previous
-        </button>
+<div className="relative flex flex-wrap justify-center items-center gap-3 p-5 bg-gray-50 w-full">
 
-        <span className="font-semibold">
-          Page {safeCurrentPage} of {totalPages}
-        </span>
+  {/* Previous button */}
+  <button
+    disabled={safeCurrentPage === 1}
+    onClick={() => setCurrentPage((prev) => prev - 1)}
+    className="px-4 py-2 rounded-lg bg-gray-200 disabled:opacity-50"
+  >
+    Previous
+  </button>
 
-        <button
-          disabled={safeCurrentPage === totalPages}
-          onClick={() => setCurrentPage((prev) => prev + 1)}
-          className="px-4 py-2 rounded-lg bg-[#32308D] text-white disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+  {/* Page number */}
+  <span className="font-semibold">
+    Page {safeCurrentPage} of {totalPages}
+  </span>
 
+  {/* Next button */}
+  <button
+    disabled={safeCurrentPage >= totalPages}
+    onClick={() => setCurrentPage((prev) => prev + 1)}
+    className="px-4 py-2 rounded-lg bg-[#32308D] text-white disabled:opacity-50"
+  >
+    Next
+  </button>
+
+  {/* Rows per page - right corner */}
+  {/* Rows per page - right corner */}
+<div className="flex items-center gap-2 sm:absolute sm:right-5">
+  <label
+    htmlFor="rowsPerPage"
+    className="font-medium text-gray-700"
+  >
+    Schools per page:
+  </label>
+
+  <select
+    id="rowsPerPage"
+    value={itemsPerPage}
+    onChange={(e) => {
+      setItemsPerPage(Number(e.target.value));
+      setCurrentPage(1);
+    }}
+    className="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2"
+  >
+    <option value={5}>5</option>
+    <option value={10}>10</option>
+    <option value={15}>15</option>
+    <option value ={20}>20</option>
+     <option value ={25}>25</option>
+      <option value ={30}>30</option>
+       <option value ={35}>35</option>
+  </select>
+</div>
+
+</div>
+
+  
     </div>
     
   );

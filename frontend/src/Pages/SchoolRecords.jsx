@@ -282,20 +282,23 @@ const [subjectGroups, setSubjectGroups] = useState(() => {
     });
 
     // Convert only Hindi Medium names
-    Object.keys(updated).forEach((subject) => {
-      const groups = updated[subject];
-      const hindiSubjects = groups?.["Hindi Medium"];
+Object.keys(updated).forEach((subject) => {
+  const groups = updated[subject];
 
-      if (Array.isArray(hindiSubjects)) {
-        updated[subject] = {
-          ...groups,
-          "Hindi Medium": hindiSubjects.map(
-            (name) => hindiMap[name] || name
-          ),
-        };
-      }
-    });
+  if (!groups || typeof groups !== "object") return;
 
+  Object.keys(groups).forEach((medium) => {
+    const value = groups[medium];
+
+    if (Array.isArray(value)) return;
+
+    if (value && typeof value === "object") {
+      groups[medium] = Object.keys(value);
+    } else {
+      groups[medium] = [];
+    }
+  });
+});
     localStorage.setItem(
       "schoolSubjectGroups",
       JSON.stringify(updated)
@@ -378,37 +381,28 @@ const createSubjectData = () => {
   const data = {};
 
   subjects.forEach((subject) => {
+    const group = subjectGroups?.[subject];
 
-    // ==============================================
-    // GROUP SUBJECT
-    // ==============================================
-
-    if (subjectGroups[subject]) {
-
+    if (group && typeof group === "object") {
       data[subject] = {};
 
-      Object.keys(
-        subjectGroups[subject]
-      ).forEach((medium) => {
+      Object.keys(group).forEach((medium) => {
+        const mediumData = group[medium];
+
+        // Support both array and older object formats
+        const subSubjects = Array.isArray(mediumData)
+          ? mediumData
+          : mediumData && typeof mediumData === "object"
+          ? Object.keys(mediumData)
+          : [];
 
         data[subject][medium] = {};
 
-        subjectGroups[subject][medium].forEach(
-          (subSubject) => {
-
-            data[subject][medium][subSubject] = [];
-          }
-        );
+        subSubjects.forEach((subSubject) => {
+          data[subject][medium][subSubject] = [];
+        });
       });
-
-    }
-
-    // ==============================================
-    // NORMAL SUBJECT
-    // ==============================================
-
-    else {
-
+    } else {
       data[subject] = [];
     }
   });
@@ -1668,9 +1662,16 @@ const subjectsData =
       subjectsData[selectedSubject][medium] = {};
     }
 
-    const mediumSubjects = groupSubjects[medium] || [];
+  const rawMediumSubjects = groupSubjects?.[medium];
 
-    mediumSubjects.forEach((subSubject) => {
+const mediumSubjects = Array.isArray(rawMediumSubjects)
+  ? rawMediumSubjects
+  : rawMediumSubjects &&
+      typeof rawMediumSubjects === "object"
+  ? Object.keys(rawMediumSubjects)
+  : [];
+
+mediumSubjects.forEach((subSubject) => {
       if (
         !subjectsData[selectedSubject][medium][subSubject]
       ) {
