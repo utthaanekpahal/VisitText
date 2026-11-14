@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState ,useRef} from "react";
 import { FiTrash2 } from "react-icons/fi";
 export default function SchoolTable({
   schools,
@@ -349,10 +349,6 @@ const handleEditSubSubject = (
 };
 
 
-
-
-
-// ================= SEARCH FILTER =================
 // ================= SEARCH FILTER =================
 const filteredSchools = schools.filter((school) => {
   const searchText = search.trim().toLowerCase();
@@ -398,7 +394,8 @@ const currentSchools = filteredSchools.slice(
     handleDeleteSchool(schoolIndex);
   };
 
-  
+
+
 
   return (
     <div className="mt-8 w-full overflow-visible rounded-2xl border border-gray-300 bg-white shadow-xl">
@@ -1464,11 +1461,7 @@ if (subjectGroups[subject]) {
 
           {/* ================= PRINCIPAL ================= */}
 
-        
-
-
-
-          <td className="border p-1 text-center min-w-[220px]">
+        <td className="border p-1 text-center min-w-[220px]">
 
             <textarea
               value={teacher.teacherName || ""}
@@ -1581,38 +1574,33 @@ if (subjectGroups[subject]) {
 
 
 {/* ================= NAME ================= */}
+
 <td className="border p-1 text-center min-w-[180px]">
   <textarea
+    data-school-nav-key={`normal-${subject}-teacherName`}
+    onKeyDown={handleSchoolNavigation}
     value={teacher.teacherName || ""}
     onChange={(e) =>
-   handleInputChange(
-  originalIndex,
-  className,
-  year,
-  selectedType,
-  subject,
-  null,
-  null,
-  teacherRow,
-  "teacherName",
-  e.target.value
-)
+      handleInputChange(
+        originalIndex,
+        className,
+        year,
+        selectedType,
+        subject,
+        null,
+        null,
+        teacherRow,
+        "teacherName",
+        e.target.value
+      )
     }
     rows={1}
     className="
-      w-full
-      min-h-[35px]
-      h-auto
-      px-2 py-1
-      bg-transparent
-      border-0
-      outline-none
-      text-center
-      text-base
-      font-bold
-      resize-none
-      overflow-hidden
-      whitespace-pre-wrap
+      w-full min-h-[35px] h-auto
+      px-2 py-1 bg-transparent
+      border-0 outline-none text-center
+      text-base font-bold resize-none
+      overflow-hidden whitespace-pre-wrap
       break-words
     "
     onInput={(e) => {
@@ -1623,41 +1611,33 @@ if (subjectGroups[subject]) {
   />
 </td>
 
-
 {/* ================= NUMBER ================= */}
-<td className="border p-1 text-center min-w-[150px]">
+<td className="border p-1 text-center min-w-[120px]">
   <textarea
+    data-school-nav-key={`normal-${subject}-number`}
+    onKeyDown={handleSchoolNavigation}
     value={teacher.number || ""}
     onChange={(e) =>
-  handleInputChange(
-  originalIndex,
-  className,
-  year,
-  selectedType,
-  subject,
-  null,
-  null,
-  teacherRow,
-  "number",
-  e.target.value
-)
+      handleInputChange(
+        originalIndex,
+        className,
+        year,
+        selectedType,
+        subject,
+        null,
+        null,
+        teacherRow,
+        "number",
+        e.target.value
+      )
     }
     rows={1}
     className="
-      w-full
-      min-h-[35px]
-      h-auto
-      px-2 py-1
-      bg-transparent
-      border-0
-      outline-none
-      text-center
-      text-base
-      font-bold
-      resize-none
-      overflow-hidden
-      whitespace-pre-wrap
-      break-words
+      w-full min-h-[35px] h-auto
+      px-2 py-1 bg-transparent
+      border-0 outline-none text-center
+      text-base resize-none overflow-hidden
+      whitespace-pre-wrap break-words
     "
     onInput={(e) => {
       e.currentTarget.style.height = "auto";
@@ -1790,8 +1770,7 @@ if (subjectGroups[subject]) {
     Next
   </button>
 
-  {/* Rows per page - right corner */}
-  {/* Rows per page - right corner */}
+ 
 <div className="flex items-center gap-2 sm:absolute sm:right-5">
   <label
     htmlFor="rowsPerPage"

@@ -9,8 +9,23 @@ import {
 
 import SchoolTable from "../components/SchoolTable";
 import ImportExcel from "../components/ImportExcel";
+import LocationSelector from "../components/LocationSelector";
+import SecondaryRecord from "../components/SecondryRecord";
 
-export default function SchoolRecords() {
+
+function SchoolRecordsContent({ selectedLocation }) {
+
+  const storageScope = encodeURIComponent(
+  [
+    selectedLocation.state,
+    selectedLocation.division,
+    selectedLocation.area,
+    selectedLocation.agent,
+    selectedLocation.schoolType,
+  ].join("__")
+);
+
+const getStorageKey = (name) => `${name}_${storageScope}`;
 const [selectedSchool, setSelectedSchool] = useState(null);
 const [selectedSubject, setSelectedSubject] = useState("");
 
@@ -92,37 +107,30 @@ useEffect(() => {
 }, [years]);
 
 
-
-
 // ======================================================
 // SCHOOLS
 // ======================================================
 
+
 const [schools, setSchools] = useState(() => {
   try {
-    const savedSchools =
-      localStorage.getItem("schoolRecords");
-
-    return savedSchools
-      ? JSON.parse(savedSchools)
-      : [];
-  } catch (error) {
-    console.error(
-      "Failed to load schools:",
-      error
+    const savedSchools = localStorage.getItem(
+      getStorageKey("schoolRecords")
     );
 
+    return savedSchools ? JSON.parse(savedSchools) : [];
+  } catch (error) {
+    console.error("Failed to load schools:", error);
     return [];
   }
 });
 
 useEffect(() => {
   localStorage.setItem(
-    "schoolRecords",
+    getStorageKey("schoolRecords"),
     JSON.stringify(schools)
   );
-}, [schools]);
-
+}, [schools, storageScope]);
 
 // ======================================================
 // SUBJECTS
@@ -550,680 +558,9 @@ const toggleExportYear = (year) => {
   });
 };
 
-const exportClassNames =
-  selectedExportClass === "both"
-    ? ["Class 11", "Class 12"]
-    : [`Class ${selectedExportClass}`];
 
-const handleExport = (type) => {
-  try {
-    // =====================================================
-    // VALIDATE SELECTED YEARS
-    // =====================================================
 
-    if (!selectedExportYears || selectedExportYears.length === 0) {
-      alert("Please select at least one year for export.");
-      return;
-    }
 
-    // =====================================================
-    // GET LOCAL STORAGE DATA
-    // =====================================================
-
-    const savedSchools = localStorage.getItem("schoolRecords");
-    const savedSubjects = localStorage.getItem("schoolSubjects");
-    const savedGroups = localStorage.getItem("schoolSubjectGroups");
-    const savedYears = localStorage.getItem("schoolYears");
-
-    const exportSchools = savedSchools
-      ? JSON.parse(savedSchools)
-      : schools;
-
-    const exportSubjects = savedSubjects
-      ? JSON.parse(savedSubjects)
-      : subjects;
-
-    const exportSubjectGroups = savedGroups
-      ? JSON.parse(savedGroups)
-      : subjectGroups;
-
-    const exportYears = savedYears
-      ? JSON.parse(savedYears)
-      : years;
-
-    // =====================================================
-    // VALIDATE YEARS
-    // =====================================================
-
-    const validExportYears = selectedExportYears.filter((year) =>
-      exportYears.some(
-        (existingYear) => String(existingYear) === String(year)
-      )
-    );
-
-    if (validExportYears.length === 0) {
-      alert("Selected export years are not available.");
-      return;
-    }
-
-    // ====================================================
-    // HELPERS
-    // =====================================================
-const classNames = exportClassNames;
-
-    const mediumNames = ["English Medium", "Hindi Medium"];
-
-    const getVerticalValues = (items, field) => {
-      if (!Array.isArray(items)) return "";
-
-      return items
-        .map((item) => String(item?.[field] ?? "").trim())
-        .filter(Boolean)
-        .join("\n");
-    };
-
-    const getClassPrincipal = (school, className) =>
-      String(school?.principal?.[className] ?? "").trim();
-
-    const getClassRemark = (school, className) =>
-      String(school?.remark?.[className] ?? "").trim();
-
-    const hasItemData = (items) => {
-      if (!Array.isArray(items)) return false;
-
-      return items.some(
-        (item) =>
-          String(item?.teacherName ?? "").trim() !== "" ||
-          String(item?.number ?? "").trim() !== "" ||
-          Number(item?.qty || 0) > 0
-      );
-    };
-
-    const hasSubjectData = (subjectData) => {
-      if (Array.isArray(subjectData)) {
-        return hasItemData(subjectData);
-      }
-
-      if (!subjectData || typeof subjectData !== "object") {
-        return false;
-      }
-
-      return Object.values(subjectData).some((mediumData) => {
-        if (!mediumData || typeof mediumData !== "object") {
-          return false;
-        }
-
-        return Object.values(mediumData).some((subItems) =>
-          hasItemData(subItems)
-        );
-      });
-    };
-
-    const getSchoolClassData = (school, className, year) =>
-      school?.classes?.[className]?.[year];
-
-    // =====================================================
-    // CHECK DATA FOR SELECTED TYPE AND SELECTED YEARS
-    // =====================================================
-
-    const checkSchoolHasData = (school) => {
-      return classNames.some((className) => {
-        const principal = getClassPrincipal(school, className);
-        const remark = getClassRemark(school, className);
-
-        if (principal || remark) return true;
-
-        return validExportYears.some((year) => {
-          const classData = getSchoolClassData(
-            school,
-            className,
-            year
-          );
-
-          const subjectData =
-            classData?.[selectedType]?.subjects || {};
-
-          return exportSubjects.some((subject) =>
-            hasSubjectData(subjectData[subject])
-          );
-        });
-      });
-    };
-
-   
-
- const activeSubjects = exportSubjects.filter((subject) => {
-  if (type === "empty" || type === "all") return true;
-
-      return exportSchools.some((school) =>
-        classNames.some((className) =>
-          validExportYears.some((year) => {
-            const classData = getSchoolClassData(
-              school,
-              className,
-              year
-            );
-
-            const data =
-              classData?.[selectedType]?.subjects?.[subject];
-
-            return hasSubjectData(data);
-          })
-        )
-      );
-    });
-
-    // =====================================================
-    // BUILD FOUR HEADER ROWS
-    // =====================================================
-
-    const rows = [
-      ["S.No", "Code", "School Name", "Class", "Year", "Principal", "Remarks"],
-      ["", "", "", "", "", "", ""],
-      ["", "", "", "", "", "", ""],
-      ["", "", "", "", "", "", ""],
-    ];
-
-    const merges = [];
-
-    // =====================================================
-    // COMMON HEADERS MERGE
-    // =====================================================
-
-    for (let col = 0; col < 7; col++) {
-      merges.push({
-        s: { r: 0, c: col },
-        e: { r: 3, c: col },
-      });
-    }
-
-    // =====================================================
-    // BUILD SUBJECT / MEDIUM / SUB-SUBJECT HEADERS
-    // =====================================================
-
-    const columnDefinitions = [];
-    let colIndex = 7;
-
-    activeSubjects.forEach((subject) => {
-      const group = exportSubjectGroups?.[subject];
-
-      if (group) {
-        const mediumDefinitions = mediumNames
-          .map((medium) => ({
-            medium,
-            subSubjects: Array.isArray(group?.[medium])
-              ? group[medium]
-              : [],
-          }))
-          .filter((item) => item.subSubjects.length > 0);
-
-        const totalCols = mediumDefinitions.reduce(
-          (sum, item) => sum + item.subSubjects.length * 2,
-          0
-        );
-
-        if (totalCols === 0) return;
-
-        const subjectStart = colIndex;
-
-        merges.push({
-          s: { r: 0, c: subjectStart },
-          e: { r: 0, c: subjectStart + totalCols - 1 },
-        });
-
-        rows[0][subjectStart] = subject;
-
-        mediumDefinitions.forEach(({ medium, subSubjects }) => {
-          const mediumStart = colIndex;
-          const mediumCols = subSubjects.length * 2;
-
-          merges.push({
-            s: { r: 1, c: mediumStart },
-            e: { r: 1, c: mediumStart + mediumCols - 1 },
-          });
-
-          rows[1][mediumStart] = medium;
-
-          subSubjects.forEach((sub) => {
-            merges.push({
-              s: { r: 2, c: colIndex },
-              e: { r: 2, c: colIndex + 1 },
-            });
-
-            rows[2][colIndex] = sub;
-            rows[3][colIndex] = "Name";
-            rows[3][colIndex + 1] = "Number";
-
-            columnDefinitions.push({
-              subject,
-              medium,
-              subSubject: sub,
-              nameCol: colIndex,
-              numberCol: colIndex + 1,
-              grouped: true,
-            });
-
-            colIndex += 2;
-          });
-        });
-      } else {
-        const subjectStart = colIndex;
-
-        merges.push({
-          s: { r: 0, c: subjectStart },
-          e: { r: 2, c: subjectStart + 1 },
-        });
-
-        rows[0][subjectStart] = subject;
-        rows[3][subjectStart] = "Name";
-        rows[3][subjectStart + 1] = "Number";
-
-        columnDefinitions.push({
-          subject,
-          medium: null,
-          subSubject: null,
-          nameCol: subjectStart,
-          numberCol: subjectStart + 1,
-          grouped: false,
-        });
-
-        colIndex += 2;
-      }
-    });
-
-    // =====================================================
-    // EXPORT SCHOOL / CLASS / YEAR ROWS
-    // =====================================================
-
-    exportSchools.forEach((school, schoolIndex) => {
-      const schoolHasData = checkSchoolHasData(school);
-
-      if (type === "filled" && !schoolHasData) return;
-      if (type === "empty" && schoolHasData) return;
-
-      classNames.forEach((className) => {
-        validExportYears.forEach((year) => {
-          const classData = getSchoolClassData(
-            school,
-            className,
-            year
-          );
-
-          const row = Array(colIndex).fill("");
-
-          row[0] = schoolIndex + 1;
-          row[1] = school?.code || "";
-          row[2] = school?.schoolName || "";
-          row[3] = className;
-          row[4] = year;
-          row[5] = getClassPrincipal(school, className);
-          row[6] = getClassRemark(school, className);
-
-          const subjectData =
-            classData?.[selectedType]?.subjects || {};
-
-          // Use each column's own subject path.
-          // Physics values can never shift into Chemistry columns.
-          columnDefinitions.forEach((definition) => {
-            const {
-              subject,
-              medium,
-              subSubject,
-              nameCol,
-              numberCol,
-              grouped,
-            } = definition;
-
-            const data = subjectData[subject];
-
-            let items = [];
-
-            if (grouped) {
-              const mediumData = data?.[medium];
-              const subItems = mediumData?.[subSubject];
-
-              items = Array.isArray(subItems) ? subItems : [];
-            } else {
-              items = Array.isArray(data) ? data : [];
-            }
-
-            row[nameCol] = getVerticalValues(items, "teacherName");
-            row[numberCol] = getVerticalValues(items, "number");
-          });
-
-          if (
-            type === "empty" &&
-            !String(row[6] || "").trim()
-          ) {
-            row[6] = "Pending Book Entry";
-          }
-
-          rows.push(row);
-        });
-      });
-    });
-
-    // =====================================================
-    // CHECK RESULT
-    // =====================================================
-if (rows.length <= 4) {
-  const message =
-    type === "filled"
-      ? "No filled school data found"
-      : type === "empty"
-      ? "No empty school data found"
-      : "No school records found";
-
-  alert(`${message} for ${validExportYears.join(", ")}.`);
-  return;
-}
-
-    // =====================================================
-    // CREATE WORKSHEET
-    // =====================================================
-
-
-const sheet = XLSX.utils.aoa_to_sheet(rows);
-
-// School Name column: wrap text and prevent overlap
-sheet["!cols"] = sheet["!cols"] || [];
-sheet["!cols"][2] = {
-  ...sheet["!cols"][2],
-  wch: 30,
-};
-
-// Increase data row height
-sheet["!rows"] = sheet["!rows"] || [];
-
-
-for (let r = 4; r < rows.length; r++) {
-  const cellAddress = XLSX.utils.encode_cell({
-    r,
-    c: 2,
-  });
-
-  if (sheet[cellAddress]) {
-    sheet[cellAddress].s = {
-      ...sheet[cellAddress].s,
-      alignment: {
-        ...sheet[cellAddress].s?.alignment,
-        wrapText: true,
-        vertical: "center",
-      },
-    };
-  }
-
-  sheet["!rows"][r] = {
-    ...sheet["!rows"][r],
-    hpt: 45,
-  };
-}
-
-
-
-    sheet["!merges"] = merges;
-
-    // =====================================================
-    // COLUMN WIDTHS
-    // =====================================================
-
-    sheet["!cols"] = Array.from(
-      { length: colIndex },
-      (_, index) => {
-        if (index === 0) return { wch: 8 };
-        if (index === 1) return { wch: 15 };
-        if (index === 2) return { wch: 35 };
-        if (index === 3) return { wch: 13 };
-        if (index === 4) return { wch: 12 };
-        if (index === 5) return { wch: 25 };
-        if (index === 6) return { wch: 30 };
-
-        return { wch: 22 };
-      }
-    );
-
-    // =====================================================
-    // LIGHT COLOURFUL HEADERS + CENTER ALIGNMENT
-    // =====================================================
-
-    const headerColors = {
-      common: "DCE6F1",
-      subject: "D9EAD3",
-      english: "DDEBF7",
-      hindi: "FCE4D6",
-      subSubject: "E4DFEC",
-      nameNumber: "FFF2CC",
-    };
-
-    const borderStyle = {
-      top: { style: "thin", color: { rgb: "B7C9D6" } },
-      bottom: { style: "thin", color: { rgb: "B7C9D6" } },
-      left: { style: "thin", color: { rgb: "B7C9D6" } },
-      right: { style: "thin", color: { rgb: "B7C9D6" } },
-    };
-
-    const applyCellStyle = (
-      cell,
-      {
-        fillColor,
-        bold = false,
-        fontColor = "263238",
-        fontSize = 10,
-      } = {}
-    ) => {
-      cell.s = {
-        alignment: {
-          horizontal: "center",
-          vertical: "center",
-          wrapText: true,
-        },
-        font: {
-          bold,
-          color: { rgb: fontColor },
-          sz: fontSize,
-        },
-        border: borderStyle,
-        ...(fillColor
-          ? {
-              fill: {
-                patternType: "solid",
-                fgColor: { rgb: fillColor },
-              },
-            }
-          : {}),
-      };
-    };
-
-    // Common header cells
-    for (let rowIndex = 0; rowIndex < 4; rowIndex++) {
-      for (let col = 0; col < 7; col++) {
-        const address = XLSX.utils.encode_cell({
-          r: rowIndex,
-          c: col,
-        });
-
-        if (sheet[address]) {
-          applyCellStyle(sheet[address], {
-            fillColor: headerColors.common,
-            bold: true,
-            fontSize: 11,
-          });
-        }
-      }
-    }
-
-    // Subject / medium / sub-subject / Name / Number
-    columnDefinitions.forEach((definition) => {
-      const {
-        subject,
-        medium,
-        subSubject,
-        nameCol,
-        numberCol,
-        grouped,
-      } = definition;
-
-      const subjectCell = XLSX.utils.encode_cell({
-        r: 0,
-        c: nameCol,
-      });
-
-      if (sheet[subjectCell]) {
-        applyCellStyle(sheet[subjectCell], {
-          fillColor: headerColors.subject,
-          bold: true,
-          fontSize: 12,
-        });
-      }
-
-      if (grouped) {
-        const mediumCell = XLSX.utils.encode_cell({
-          r: 1,
-          c: nameCol,
-        });
-
-        if (sheet[mediumCell]) {
-          applyCellStyle(sheet[mediumCell], {
-            fillColor:
-              medium === "Hindi Medium"
-                ? headerColors.hindi
-                : headerColors.english,
-            bold: true,
-            fontSize: 11,
-          });
-        }
-
-        const subCell = XLSX.utils.encode_cell({
-          r: 2,
-          c: nameCol,
-        });
-
-        if (sheet[subCell]) {
-          applyCellStyle(sheet[subCell], {
-            fillColor: headerColors.subSubject,
-            bold: true,
-            fontSize: 10,
-          });
-        }
-      }
-
-      [nameCol, numberCol].forEach((col) => {
-        const cellAddress = XLSX.utils.encode_cell({
-          r: 3,
-          c: col,
-        });
-
-        if (sheet[cellAddress]) {
-          applyCellStyle(sheet[cellAddress], {
-            fillColor: headerColors.nameNumber,
-            bold: true,
-            fontSize: 10,
-          });
-        }
-      });
-    });
-
-    // Center-align data rows and add borders.
-    for (let r = 4; r < rows.length; r++) {
-      for (let c = 0; c < colIndex; c++) {
-        const address = XLSX.utils.encode_cell({ r, c });
-
-        if (!sheet[address]) continue;
-
-        sheet[address].s = {
-          alignment: {
-            horizontal: "center",
-            vertical: "center",
-            wrapText: true,
-          },
-          border: borderStyle,
-        };
-      }
-    }
-
-    // =====================================================
-    // ROW HEIGHTS
-    // =====================================================
-
-    sheet["!rows"] = rows.map((row, rowIndex) => {
-      if (rowIndex === 0) return { hpt: 30 };
-      if (rowIndex === 1) return { hpt: 27 };
-      if (rowIndex === 2) return { hpt: 27 };
-      if (rowIndex === 3) return { hpt: 25 };
-
-      let maxLines = 1;
-
-      row.forEach((value) => {
-        if (typeof value === "string") {
-          maxLines = Math.max(maxLines, value.split("\n").length);
-        }
-      });
-
-      return {
-  hpt: Math.max(45, maxLines * 18),
-};
-    });
-
-    // =====================================================
-    // FREEZE HEADER ROWS + COMMON COLUMNS
-    // =====================================================
-
-    sheet["!freeze"] = {
-      xSplit: 7,
-      ySplit: 4,
-      topLeftCell: "H5",
-      activePane: "bottomRight",
-      state: "frozen",
-    };
-
-    // =====================================================
-    // CREATE WORKBOOK
-    // =====================================================
-
-    const wb = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(
-      wb,
-      sheet,
-      "School Records"
-    );
-
-    // =====================================================
-    // EXPORT FILE
-    // =====================================================
-
-    const yearText = validExportYears.join("_");
-
-   
-const classText =
-  selectedExportClass === "both"
-    ? "Class11_12"
-    : `Class${selectedExportClass}`;
-
-const fileName =
-  type === "filled"
-    ? `School_Filled_${classText}_${yearText}.xlsx`
-    : type === "empty"
-    ? `School_Empty_${classText}_${yearText}.xlsx`
-    : `School_All_${classText}_${yearText}.xlsx`;
-
-    XLSX.writeFile(wb, fileName);
-const exportLabel =
-  type === "filled"
-    ? "Filled"
-    : type === "empty"
-    ? "Empty"
-    : "All";
-
-alert(
-  `${exportLabel} records exported for: ${validExportYears.join(", ")}`
-);
-  } catch (error) {
-    console.error("Export failed:", error);
-
-    alert("Export failed. Please check your data.");
-  }
-};
 
 
 const handleDeleteSchool = (schoolIndex) => {
@@ -1985,7 +1322,10 @@ setSubjectGroups((prev) => {
       return updated;
     })
   );
-};                                                                                                                                                                                                                
+};  
+
+ 
+
 
   return (
 
@@ -1993,7 +1333,37 @@ setSubjectGroups((prev) => {
 
 
       {/* ================= HEADER ================= */}
+<div className="mt-2 flex flex-wrap items-center gap-20 text-xl">
 
+  <span className=" text-black font-bold">
+    State:
+    <b className="ml-1 text-black">
+      {selectedLocation?.state || "Not Selected"}
+    </b>
+  </span>
+
+  <span className=" text-black font-bold">
+    Division:
+    <b className="ml-1 text-black">
+      {selectedLocation?.division || "Not Selected"}
+    </b>
+  </span>
+
+  <span className=" text-black font-bold">
+    Area:
+    <b className="ml-1 text-black font-bold">
+      {selectedLocation?.area || "Not Selected"}
+    </b>
+  </span>
+
+  <span className=" text-black font-bold">
+    Agent:
+    <b className="ml-1 text-black">
+      {selectedLocation?.agent || "Not Selected"}
+    </b>
+  </span>
+
+</div>
 
       {/* BLUE HEADER */}
   <div className="relative  rounded-[32px] bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 p-10 shadow-2xl">
@@ -2053,14 +1423,18 @@ setSubjectGroups((prev) => {
 <div className="flex flex-wrap gap-4">
 
 
-
             {/* IMPORT EXCEL BUTTON */}
-
-   <ImportExcel
+<ImportExcel
   setSchools={setSchools}
+  schools={schools}
   subjects={subjects}
   subjectGroups={subjectGroups}
   selectedType={selectedType}
+  years={years}
+  selectedLocation={selectedLocation}
+  getStorageKey={getStorageKey}
+  selectedExportClass={selectedExportClass}
+  selectedExportYears={selectedExportYears}
 />
 <button
   className="
@@ -2086,35 +1460,7 @@ setSubjectGroups((prev) => {
   Add Subject
 </button>
 
-            <button
-onClick={() => handleExport("filled")}
-className="bg-green-600 text-white px-5 py-3 rounded-xl text-2xl font-bold"
->
-Export Filled
-</button>
-<button
-  disabled
-  className="
-    bg-gray-400
-    text-black
-    font-bold
-    text-2xl
-    px-5
-    py-3
-    rounded-xl
-    cursor-not-allowed
-    opacity-60
-  "
->
-  Export Empty
-</button>
-
-<button
-  onClick={() => handleExport("all")}
-  className="rounded-lg bg-pink-600 px-4 py-2 text-white text-2xl font-bold"
->
-  Export All
-</button>
+        
 
    <button
   className="
@@ -2187,8 +1533,6 @@ Export Filled
     },
   };
 
-  
-
   setSchools((prev) => [
     ...prev,
     newSchool,
@@ -2230,7 +1574,6 @@ Export Filled
   <option value="both">Both Classes (11 + 12)</option>
 </select>
 
-  {/* EXPORT YEAR */}
   {/* ================= EXPORT YEAR ================= */}
 
 <div className="relative z-[300]">
@@ -2295,4 +1638,41 @@ Export Filled
 
   );
 
+}
+export default function SchoolRecords() {
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
+  const handleContinue = (location) => {
+    setSelectedLocation(location);
+  };
+
+  if (!selectedLocation) {
+    return <LocationSelector onContinue={handleContinue} />;
+  }
+
+  const storageScope = encodeURIComponent(
+    [
+      selectedLocation.state,
+      selectedLocation.division,
+      selectedLocation.area,
+      selectedLocation.agent,
+      selectedLocation.schoolType,
+    ].join("__")
+  );
+
+  if (selectedLocation.schoolType === "Secondary") {
+    return (
+      <SecondaryRecord
+        key={storageScope}
+        selectedLocation={selectedLocation}
+      />
+    );
+  }
+
+  return (
+    <SchoolRecordsContent
+      key={storageScope}
+      selectedLocation={selectedLocation}
+    />
+  );
 }
