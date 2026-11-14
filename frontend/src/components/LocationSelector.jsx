@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import locationData from "../data/data";
+import locationData from "../data/Data";
 
 export default function LocationSelector({ onContinue }) {
   const [selectedState, setSelectedState] = useState("");
