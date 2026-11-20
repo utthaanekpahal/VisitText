@@ -669,6 +669,7 @@ const rows = [
     `Division: ${selectedLocation?.division || ""}`,
     `Area: ${selectedLocation?.area || ""}`,
     `Agent: ${selectedLocation?.agent || ""}`,
+    `Type: ${selectedType || ""}`,
   ],
   [],
   ["S.No", "Code", "School Name", "Class", "Year", "Principal", "Remarks"],
